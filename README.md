@@ -1,10 +1,10 @@
 # dotfiles
 my linux and osx dotfiles
 
-# install
+### install
 
     make install
 
-# remove all
+### remove all
 
     make clean
