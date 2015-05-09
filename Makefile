@@ -1,16 +1,21 @@
-TARGETS=git vimrc
+TARGETS=git vimrc tmux
 
 GIT=~/.gitconfig
 VIMRC=~/.vimrc
+TMUX=~/.tmux.conf
 
 all: $(TARGETS)
 
 git: $(GIT)
 vimrc: $(VIMRC)
+tmux: $(TMUX)
 
 
 $(GIT): git/gitconfig
-	cp git/gitconfig ~/.gitconfig
+	cp git/gitconfig $(GIT)
+
+$(TMUX): tmux/tmux.conf
+	cp tmux/tmux.conf $(TMUX)
 
 $(VIMRC):
 	make -C vimrc install
@@ -18,5 +23,5 @@ $(VIMRC):
 .PHONY:clean
 
 clean:
-	-rm $(TARGETS)
+	-rm $(GIT) $(TMUX)
 	make -C vimrc clean
