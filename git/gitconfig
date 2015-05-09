@@ -1,0 +1,12 @@
+[core]
+	editor = vim
+[user]
+	name = alvie
+	email = alvie.zhang@gmail.com
+[merge]
+	tool = vimdiff
+[color]
+	ui = auto
+	diff = auto
+	status = auto
+	branch = auto
