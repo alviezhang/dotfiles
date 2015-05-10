@@ -18,6 +18,9 @@ $(TMUX): tmux/tmux.conf
 	cp tmux/tmux.conf $(TMUX)
 
 $(VIMRC):
+	cd vimrc
+	git submodule init
+	git submodule update
 	make -C vimrc install
 
 .PHONY:clean
