@@ -1,15 +1,18 @@
 TARGETS=git tmux zsh vim
 
+ZSH_CONF_NAME=${USER}.zsh
+
 GIT=~/.gitconfig
 TMUX=~/.tmux.conf
 ZSH=~/.oh-my-zsh
+ZSH_CONF=~/.oh-my-zsh/custom/${ZSH_CONF_NAME}
 VIM=~/.vimrc ~/.vim
 
 all: $(TARGETS)
 
 git: $(GIT)
 tmux: $(TMUX)
-zsh: $(ZSH_CONF)
+zsh: $(ZSH) $(ZSH_CONF)
 vim: $(VIM)
 
 $(GIT): gitconfig
@@ -21,6 +24,8 @@ $(TMUX): tmux.conf
 $(ZSH):
 	git clone git://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
 	cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
+
+$(ZSH_CONF): ${ZSH_CONF_NAME}
 	cp alvie.zsh $(ZSH_CONF)
 
 $(VIM): vimrc
