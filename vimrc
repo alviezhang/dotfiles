@@ -1,6 +1,6 @@
 "
 set clipboard=unnamed
-set mouse=a
+"set mouse=a
 set fileencodings=utf8,gb18030,gbk,gb2312,big5
 set number
 
@@ -27,6 +27,7 @@ Plugin 'bling/vim-airline'
 Plugin 'matrix.vim--Yang'
 Plugin 'L9'
 Plugin 'fatih/vim-go'
+Plugin 'trusktr/seti.vim'
 
 " The sparkup vim script is in a subdirectory of this repo called vim.
 " Pass the path to set the runtimepath properly.
@@ -136,7 +137,7 @@ set tm=500
 " Enable syntax highlighting
 syntax enable
 
-colorscheme desert
+colorscheme seti
 set background=dark
 
 " Set extra options when running in GUI mode
