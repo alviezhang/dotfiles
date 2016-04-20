@@ -4,9 +4,16 @@ ZSH_THEME="bira"
 # source ~/.virtualenv/python2/bin/activate
 export PATH=~/bin:$PATH:/usr/local/opt/go/libexec/bin
 
-plugins=(git osx autojump brew brew-cask golang)
+UNAME=`uname`
 
-export GOPATH=~/.go
+if [ "$UNAME" = "Linux" ]; then
+    plugins=(git autojump golang httpie)
+elif [ "$UNAME" = "Darwin" ]; then
+    plugins=(git osx autojump brew brew-cask golang httpie)
+fi
+
+export GOPATH=~/code/go
+mkdir -p $GOPATH
 
 function proxy() {
     export http_proxy=http://localhost:8118;export https_proxy=http://localhost:8118
