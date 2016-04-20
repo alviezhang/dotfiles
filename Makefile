@@ -24,7 +24,7 @@ $(ZSH):
 	cp alvie.zsh $(ZSH_CONF)
 
 $(VIM): vimrc
-	-rm -rf ~/.vimrc ~/.vim
+	rm -rf ~/.vimrc ~/.vim
 	mkdir ~/.vim
 	cp vimrc ~/.vimrc
 	git clone https://github.com/gmarik/Vundle.vim.git ~/.vim/bundle/Vundle.vim
