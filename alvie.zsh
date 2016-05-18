@@ -9,6 +9,7 @@ if [ "$UNAME" = "Linux" ]; then
     plugins=(git autojump golang httpie)
 elif [ "$UNAME" = "Darwin" ]; then
     plugins=(git osx autojump brew brew-cask golang httpie)
+    export LANG=en_US.UTF-8
 fi
 
 export GOPATH=~/code/go
