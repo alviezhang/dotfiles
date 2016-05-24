@@ -25,8 +25,8 @@ $(ZSH):
 	git clone git://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
 	cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
 
-$(ZSH_CONF): ${ZSH_CONF_NAME}
-	cp alvie.zsh $(ZSH_CONF)
+$(ZSH_CONF): custom.zsh
+	cp custom.zsh $(ZSH_CONF)
 
 $(VIM): vimrc
 	rm -rf ~/.vimrc ~/.vim
