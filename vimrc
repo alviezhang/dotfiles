@@ -28,6 +28,7 @@ Plugin 'matrix.vim--Yang'
 Plugin 'L9'
 Plugin 'fatih/vim-go'
 Plugin 'trusktr/seti.vim'
+Plugin 'cespare/vim-toml'
 
 " The sparkup vim script is in a subdirectory of this repo called vim.
 " Pass the path to set the runtimepath properly.
