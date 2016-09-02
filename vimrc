@@ -1,5 +1,5 @@
 "
-set clipboard=unnamed
+"set clipboard=unnamed
 "set mouse=a
 set fileencodings=utf8,gb18030,gbk,gb2312,big5
 set number

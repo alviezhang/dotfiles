@@ -30,13 +30,15 @@ function direct() {
 
 # End
 
-
 # Python Settings
 
 if which pyenv > /dev/null; then eval "$(pyenv init -)"; fi
 
-export WORKON_HOME=~/.envs
+# virtualenv wrapper
+
+VIRTUALENVWRAPPER_BIN = /usr/local/bin/virtualenvwrapper.sh
+export WORKON_HOME=$HOME/.virtualenvs
 mkdir -p $WORKON_HOME
-source /usr/local/bin/virtualenvwrapper.sh
+if which $VIRTUALENVWRAPPER_BIN; then eval "source $VIRTUALENVWRAPPER_BIN"
 
 # End
