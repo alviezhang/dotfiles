@@ -36,9 +36,8 @@ if which pyenv > /dev/null; then eval "$(pyenv init -)"; fi
 
 # virtualenv wrapper
 
-VIRTUALENVWRAPPER_BIN = /usr/local/bin/virtualenvwrapper.sh
+set VIRTUALENVWRAPPER_BIN=/usr/local/bin/virtualenvwrapper.sh
 export WORKON_HOME=$HOME/.virtualenvs
 mkdir -p $WORKON_HOME
-if which $VIRTUALENVWRAPPER_BIN; then eval "source $VIRTUALENVWRAPPER_BIN"
-
+if which $VIRTUALENVWRAPPER_BIN; then eval "source $VIRTUALENVWRAPPER_BIN";fi
 # End
