@@ -40,7 +40,7 @@ VIRTUALENVWRAPPER_BIN=virtualenvwrapper.sh
 export WORKON_HOME=$HOME/.virtualenvs
 mkdir -p $WORKON_HOME
 
-if which $VIRTUALENVWRAPPER_BIN; then
+if which $VIRTUALENVWRAPPER_BIN > /dev/null; then
     source $VIRTUALENVWRAPPER_BIN
 fi
 
