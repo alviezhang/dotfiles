@@ -29,6 +29,8 @@ Plugin 'L9'
 Plugin 'fatih/vim-go'
 Plugin 'trusktr/seti.vim'
 Plugin 'cespare/vim-toml'
+Plugin 'tpope/vim-db'
+Plugin 'ntpeters/vim-better-whitespace'
 
 " The sparkup vim script is in a subdirectory of this repo called vim.
 " Pass the path to set the runtimepath properly.
