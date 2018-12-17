@@ -1,4 +1,4 @@
-TARGETS=git tmux zsh vim
+TARGETS=git tmux vim
 
 ZSH_CONF_NAME=${USER}.zsh
 
