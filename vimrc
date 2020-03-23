@@ -1,5 +1,5 @@
 "
-"set clipboard=unnamed
+set clipboard=unnamed
 "set mouse=a
 set fileencodings=utf8,gb18030,gbk,gb2312,big5
 set number
@@ -27,7 +27,7 @@ Plugin 'bling/vim-airline'
 Plugin 'matrix.vim--Yang'
 Plugin 'L9'
 Plugin 'fatih/vim-go'
-Plugin 'trusktr/seti.vim'
+Plugin 'rainglow/vim'
 Plugin 'cespare/vim-toml'
 Plugin 'tpope/vim-db'
 Plugin 'ntpeters/vim-better-whitespace'
@@ -140,7 +140,7 @@ set tm=500
 " Enable syntax highlighting
 syntax enable
 
-colorscheme seti
+colorscheme waste
 set background=dark
 
 " Set extra options when running in GUI mode
