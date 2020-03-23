@@ -1,25 +1,27 @@
-TARGETS=git tmux vim
 
 ZSH_CONF_NAME=${USER}.zsh
 
 GIT=~/.gitconfig
-TMUX=~/.tmux.conf
+TMUX=~/.tmux.conf.local
 ZSH=~/.oh-my-zsh
 ZSH_CONF=~/.oh-my-zsh/custom/${ZSH_CONF_NAME}
 VIM=~/.vimrc ~/.vim
 
-all: $(TARGETS)
 
 git: $(GIT)
 tmux: $(TMUX)
 zsh: $(ZSH) $(ZSH_CONF)
 vim: $(VIM)
 
+
 $(GIT): gitconfig
 	cp gitconfig $(GIT)
 
-$(TMUX): tmux.conf
-	cp tmux.conf $(TMUX)
+$(TMUX):
+	rm -rf .tmux
+	git clone https://github.com/gpakosz/.tmux.git
+	ln -sf $(CURDIR)/.tmux/.tmux.conf ~
+	ln -sf $(CURDIR)/tmux.conf $(TMUX)
 
 $(ZSH):
 	git clone git://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
@@ -38,4 +40,5 @@ $(VIM): vimrc
 .PHONY: clean
 
 clean:
-	-rm $(GIT) $(TMUX)
+	-rm $(GIT)
+	-rm -rf .tmux ~/.tmux.conf*
