@@ -1,5 +1,11 @@
 install:
+	make brew
+	make cask
+
+brew:
 	grep -vE '^$|[#;]' packages.list | xargs brew install
+
+cask:
 	grep -vE '^$|[#;]' casks.list | xargs brew cask install
 
 update:
