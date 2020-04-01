@@ -1,0 +1,34 @@
+# Core
+tree
+fish
+git
+curl
+
+# Libraries
+openssl
+zlib
+
+# Dev
+go
+vim
+tmux
+jq
+cloc
+
+graphviz
+openjdk
+
+# Networking
+mtr
+httpie
+wget
+wireguard-tools
+wrk
+mitmproxy
+
+# Download
+youtube-dl
+aria2
+
+# Utils
+ncdu
