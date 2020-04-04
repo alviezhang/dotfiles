@@ -5,5 +5,5 @@ install:
 	vim +PluginInstall +qall
 
 uninstall:
-	rm ~/.vimrc
-	rm -r ~/.vim
+	-rm ~/.vimrc
+	-rm -rf ~/.vim
