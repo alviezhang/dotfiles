@@ -1,5 +1,18 @@
 # dotfiles
-My dotfiles.
+
+## Lists of active configurations
+
+Active tool configurations:
+- git
+- oh-my-fish
+- tmux
+- vim
+
+Active OS specific configurations:
+- brew
+
+Working on progross configurations *DO NOT USE*:
+- archlinux
 
 ## Install
 
