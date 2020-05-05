@@ -4,6 +4,7 @@ set clipboard=unnamed
 set fileencodings=utf8,gb18030,gbk,gb2312,big5
 set number
 
+
 " =============================
 " =============================
 " Vundle required configuration
@@ -13,6 +14,8 @@ set number
 set nocompatible              " be iMproved, required
 filetype off                  " required
 
+set shell=/bin/bash
+
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
@@ -20,7 +23,7 @@ call vundle#begin()
 "call vundle#begin('~/some/path/here')
 
 " let Vundle manage Vundle, required
-Plugin 'gmarik/Vundle.vim'
+Plugin 'VundleVim/Vundle.vim'
 Plugin 'tpope/vim-fugitive'
 "Plugin 'klen/python-mode'
 Plugin 'bling/vim-airline'
@@ -35,6 +38,8 @@ Plugin 'ntpeters/vim-better-whitespace'
 " The sparkup vim script is in a subdirectory of this repo called vim.
 " Pass the path to set the runtimepath properly.
 Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
+
+Plugin 'rust-lang/rust.vim'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
