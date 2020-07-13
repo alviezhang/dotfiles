@@ -10,3 +10,5 @@
 	diff = auto
 	status = auto
 	branch = auto
+[pull]
+	ff = only
