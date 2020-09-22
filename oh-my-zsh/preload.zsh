@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-_plugins=(git golang httpie python pyenv)
+_plugins=(git golang httpie python pyenv ripgrep)
 
 # Platform specific configurations
 UNAME=`uname`
