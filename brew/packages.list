@@ -1,12 +1,13 @@
 # Core
 tree
-fish
 git
+zsh
 curl
 
 # Libraries
 openssl
 zlib
+xz
 
 # Dev
 direnv
