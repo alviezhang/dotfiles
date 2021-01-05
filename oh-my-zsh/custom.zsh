@@ -5,6 +5,8 @@ ZSH_THEME="bira"
 # macOS
 function macOS() {
     export LANG=en_US.UTF-8
+
+    export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 }
 
 # Linux
