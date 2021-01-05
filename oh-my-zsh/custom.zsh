@@ -5,16 +5,6 @@ ZSH_THEME="bira"
 # macOS
 function macOS() {
     export LANG=en_US.UTF-8
-
-    export PATH="/usr/local/opt/openjdk/bin:$PATH"
-    export PATH="/usr/local/opt/curl/bin:$PATH"
-
-    export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig:$PKG_CONFIG_PATH"
-    export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
-    export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
-
-    source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
-    source "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
 }
 
 # Linux
