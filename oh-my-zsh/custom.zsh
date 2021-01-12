@@ -20,10 +20,10 @@ elif [ "$OS" = "macOS" ]; then
 fi
 
 export PATH="/usr/local/sbin:$PATH"
-export PATH="~/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # Go Settings
-export GOPATH=~/code/go
+export GOPATH=$HOME/code/go
 mkdir -p $GOPATH
 export PATH=$GOPATH/bin:$PATH
 # End
