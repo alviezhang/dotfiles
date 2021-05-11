@@ -40,4 +40,6 @@ function direct() {
     unset all_proxy;
 }
 
+[[ -s "/home/alvie/.gvm/scripts/gvm" ]] && source "/home/alvie/.gvm/scripts/gvm"
+
 # File End
