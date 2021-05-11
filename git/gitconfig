@@ -13,3 +13,5 @@
 [pull]
     ff = only
     rebase = yes
+[url "git@github.com:"]
+	insteadOf = https://github.com/
