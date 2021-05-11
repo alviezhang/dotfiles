@@ -20,7 +20,8 @@ elif [ "$OS" = "macOS" ]; then
 fi
 
 export PATH="/usr/local/sbin:$PATH"
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="~/.local/bin:$PATH"
+export GOPRIVATE=github.com/AfterShip/*
 
 # Go Settings
 export GOPATH=$HOME/code/go

@@ -1,14 +1,15 @@
 [core]
-	editor = vim
+    editor = vim
 [user]
-	name = Alvie Zhang
-	email = alvie.zhang@gmail.com
+    name = Alvie Zhang
+    email = alvie.zhang@gmail.com
 [merge]
-	tool = vimdiff
+    tool = vimdiff
 [color]
-	ui = auto
-	diff = auto
-	status = auto
-	branch = auto
+    ui = auto
+    diff = auto
+    status = auto
+    branch = auto
 [pull]
-	ff = only
+    ff = only
+    rebase = yes
