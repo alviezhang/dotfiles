@@ -29,6 +29,10 @@ mkdir -p $GOPATH
 export PATH=$GOPATH/bin:$PATH
 # End
 
+# Python
+eval "$(pyenv init -)"
+# End Python
+
 # Proxy Settings
 function proxy() {
     export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890

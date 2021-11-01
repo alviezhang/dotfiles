@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-_plugins=(git git-prune golang httpie python pyenv ripgrep)
+_plugins=(git golang httpie python pyenv ripgrep)
 
 # Platform specific configurations
 UNAME=`uname`
@@ -14,3 +14,9 @@ elif [ "$UNAME" = "Darwin" ]; then
 fi
 
 plugins=(${_plugins} ${os_plugins})
+
+# Python
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+# End Python
