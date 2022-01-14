@@ -6,7 +6,7 @@ ZSH_THEME="bira"
 function macOS() {
     export LANG=en_US.UTF-8
 
-    export PATH="$HOME/Library/Python/3.9/bin:$PATH"
+    export PATH="$HOME/Library/Python/3.8/bin:$PATH"
 }
 
 # Linux
@@ -30,6 +30,9 @@ export PATH=$GOPATH/bin:$PATH
 # End
 
 # Python
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+# eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 # End Python
 

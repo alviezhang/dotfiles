@@ -1,4 +1,8 @@
+.PHONY: install download update uninstall
+
+
 ZSH_CONF_NAME=${USER}.zsh
+
 
 install: download update
 
@@ -11,5 +15,4 @@ update:
 	ln -sf $(CURDIR)/custom.zsh ~/.oh-my-zsh/custom/${ZSH_CONF_NAME}
 
 uninstall:
-	uninstall_oh_my_zsh
-	rm ~/.oh-my-zsh/custom/${ZSH_CONF_NAME}
+	echo y | uninstall_oh_my_zsh
