@@ -2,11 +2,13 @@
 
 ZSH_THEME="bira"
 
+# Language
+export LANG=en_US.UTF-8
+
 # macOS
 function macOS() {
-    export LANG=en_US.UTF-8
-
-    export PATH="$HOME/Library/Python/3.8/bin:$PATH"
+    # export LANG=en_US.UTF-8
+    # export PATH="$HOME/Library/Python/3.11/bin:$PATH"
 }
 
 # Linux
@@ -20,13 +22,13 @@ elif [ "$OS" = "macOS" ]; then
 fi
 
 export PATH="/usr/local/sbin:$PATH"
-export PATH="~/.local/bin:$PATH"
-export GOPRIVATE=github.com/AfterShip/*
+export PATH="$HOME/.local/bin:$PATH"
 
 # Go Settings
 export GOPATH=$HOME/code/go
 mkdir -p $GOPATH
 export PATH=$GOPATH/bin:$PATH
+# export GOPRIVATE=github.com/AfterShip/*
 # End
 
 # Python
@@ -35,6 +37,10 @@ export PATH="$PYENV_ROOT/bin:$PATH"
 # eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 # End Python
+
+# Rustup
+export PATH=$HOME/.cargo/bin:$PATH
+# End rustup
 
 # Proxy Settings
 function proxy() {
