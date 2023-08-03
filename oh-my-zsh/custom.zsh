@@ -25,7 +25,7 @@ export PATH="/usr/local/sbin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 
 # Go Settings
-export GOPATH=$HOME/code/go
+export GOPATH=$HOME/.go
 mkdir -p $GOPATH
 export PATH=$GOPATH/bin:$PATH
 # export GOPRIVATE=github.com/AfterShip/*
