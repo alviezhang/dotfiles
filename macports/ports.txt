@@ -1,0 +1,54 @@
+# Libraries
+readline
+sqlite3
+xz
+
+openssl
+
+# Developer tools
+python311
+python3_select
+python_select
+nvm
+go
+openjdk17
+
+# Command-line tools
+## System utilities
+htop
+tmux
+neofetch
+
+## File or text utilities
+tree
+ripgrep
+gdu
+jq
+tokei
+
+## Networking utilities
+curl
+curl-ca-bundle
+
+openssh
+ssh-copy-id
+wget
+
+iperf3
+mtr
+
+## Third-party tools
+google-cloud-sdk
+gh
+terraform
+terraform_select
+
+## Others
+html2text
+redis
+influx-cli
+
+py-ansible
+ansible_select
+
+port_cutleaves
