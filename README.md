@@ -4,15 +4,13 @@
 
 Active tool configurations:
 - git
-- oh-my-fish
+- ohmyfish
 - tmux
 - vim
 
 Active OS specific configurations:
-- brew
-
-Working on progross configurations *DO NOT USE*:
 - archlinux
+- brew
 
 ## Install
 
