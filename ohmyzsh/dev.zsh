@@ -20,13 +20,20 @@ fi
 [[ -s "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
 
 # 代理配置函数
+# 检查是否存在 ~/.env 文件，如果存在则读取其中的环境变量
+if [[ -f "$HOME/.config/proxy.sh" ]]; then
+  . "$HOME/.config/proxy.sh"
+fi
+
 proxy() {
-  export PROXYHOST=10.0.10.20
+  export PROXYHOST=${PROXYHOST:-10.0.10.20}
   export http_proxy=http://$PROXYHOST:7890
   export https_proxy=http://$PROXYHOST:7890
   export all_proxy=socks5://$PROXYHOST:7891
+  echo "✅ Proxy ON"
 }
 
 direct() {
   unset http_proxy https_proxy all_proxy
+  echo "🚫 Proxy OFF"
 }
