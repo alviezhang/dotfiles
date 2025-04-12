@@ -1,0 +1,6 @@
+html2text
+redis
+influx-cli
+
+terraform
+terraform_select

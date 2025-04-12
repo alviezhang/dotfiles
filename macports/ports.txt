@@ -11,7 +11,7 @@ python3_select
 python_select
 nvm
 go
-openjdk17
+openjdk21-zulu
 
 # Command-line tools
 ## System utilities
@@ -38,15 +38,7 @@ iperf3
 mtr
 
 ## Third-party tools
-google-cloud-sdk
 gh
-terraform
-terraform_select
-
-## Others
-html2text
-redis
-influx-cli
 
 py-ansible
 ansible_select
