@@ -10,7 +10,7 @@ platform
 
 # age 加密文件（不放入 ~/）
 key.txt.age
-git-identity.json.age
+git-identity.toml.age
 
 # OS 专属配置文件，按 OS 过滤
 {{ if ne .chezmoi.os "linux" }}dot_config/fontconfig{{ end }}

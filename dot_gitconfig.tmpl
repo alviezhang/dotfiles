@@ -1,4 +1,4 @@
-{{- $identity := include "git-identity.json.age" | decrypt | fromJson -}}
+{{- $identity := include "git-identity.toml.age" | decrypt | fromToml -}}
 [user]
     name  = {{ $identity.name | quote }}
     email = {{ $identity.email | quote }}
