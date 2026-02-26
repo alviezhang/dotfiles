@@ -1,7 +1,20 @@
-#!/bin/sh
+#!/bin/bash
 # key.txt.age hash: {{ include "key.txt.age" | sha256sum }}
-if [ ! -f "${HOME}/.config/chezmoi/key.txt" ]; then
-    mkdir -p "${HOME}/.config/chezmoi"
-    chezmoi age decrypt --output "${HOME}/.config/chezmoi/key.txt" --passphrase "{{ .chezmoi.sourceDir }}/key.txt.age"
-    chmod 600 "${HOME}/.config/chezmoi/key.txt"
+set -e
+
+KEY_FILE="${HOME}/.config/chezmoi/key.txt"
+SOURCE_DIR="{{ .chezmoi.sourceDir }}"
+
+[ -f "$KEY_FILE" ] && exit 0
+
+mkdir -p "${HOME}/.config/chezmoi"
+
+if [ -f "$SOURCE_DIR/.password" ] && command -v rage &>/dev/null; then
+    # 非交互：从 .password 读取密码，用 rage 解密
+    RAGE_PASSPHRASE=$(cat "$SOURCE_DIR/.password") rage -d -o "$KEY_FILE" "$SOURCE_DIR/key.txt.age"
+else
+    # 交互：手动输入密码（rage 不可用或 .password 不存在）
+    chezmoi age decrypt --output "$KEY_FILE" --passphrase "$SOURCE_DIR/key.txt.age"
 fi
+
+chmod 600 "$KEY_FILE"
