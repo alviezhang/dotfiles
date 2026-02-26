@@ -1,2 +1,3 @@
 .tmux/
 .DS_Store
+.worktrees/
