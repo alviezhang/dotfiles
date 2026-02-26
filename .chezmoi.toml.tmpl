@@ -1,4 +1,14 @@
-{{- $machineType := promptStringOnce . "machineType" "machineType" -}}
+{{- $machineType := "" -}}
+{{- if env "CHEZMOI_MACHINE_TYPE" -}}
+{{-   $machineType = env "CHEZMOI_MACHINE_TYPE" -}}
+{{- else -}}
+{{-   $machineType = promptStringOnce . "machineType" "machineType" -}}
+{{- end -}}
+encryption = "age"
+[age]
+  identity = "~/.config/chezmoi/key.txt"
+  recipient = "age1awmaa5hgt6z6mgzrepnls4flehjgu74tqc7fgu0sm4gg5yd30q8swufm3t"
+
 [data]
   machineType = {{ $machineType | quote }}
   personal    = {{ eq $machineType "personal" }}
@@ -8,8 +18,3 @@
   installRust = {{ if hasKey . "installRust" }}{{ .installRust }}{{ else }}false{{ end }}
   installNode = {{ if hasKey . "installNode" }}{{ .installNode }}{{ else }}false{{ end }}
   installUv   = {{ if hasKey . "installUv" }}{{ .installUv }}{{ else }}false{{ end }}
-
-encryption = "age"
-[age]
-  identity = "~/.config/chezmoi/key.txt"
-  recipient = "age1awmaa5hgt6z6mgzrepnls4flehjgu74tqc7fgu0sm4gg5yd30q8swufm3t"
