@@ -1,6 +1,6 @@
 #!/bin/bash
 # apt packages hash: {{ include "platform/linux/apt.list" | sha256sum }}
-{{ if and (ne .chezmoi.osRelease.id "ubuntu") (ne .chezmoi.osRelease.id "debian") }}exit 0{{ end }}
+{{ if ne .chezmoi.os "linux" }}exit 0{{ else if and (ne .chezmoi.osRelease.id "ubuntu") (ne .chezmoi.osRelease.id "debian") }}exit 0{{ end }}
 set -e
 sudo apt-get update -q
 grep -vE '^$|[#;]' "{{ .chezmoi.sourceDir }}/platform/linux/apt.list" \

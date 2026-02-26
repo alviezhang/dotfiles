@@ -1,6 +1,6 @@
 #!/bin/bash
 # pacman packages hash: {{ include "platform/linux/pacman.list" | sha256sum }}
-{{ if and (ne .chezmoi.osRelease.id "arch") (ne .chezmoi.osRelease.id "endeavouros") }}exit 0{{ end }}
+{{ if ne .chezmoi.os "linux" }}exit 0{{ else if and (ne .chezmoi.osRelease.id "arch") (ne .chezmoi.osRelease.id "endeavouros") }}exit 0{{ end }}
 set -e
 grep -vE '^$|[#;]' "{{ .chezmoi.sourceDir }}/platform/linux/pacman.list" \
   | xargs sudo pacman -S --needed --noconfirm
