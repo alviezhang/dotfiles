@@ -1,6 +1,7 @@
+{{- $identity := include "git-identity.json.age" | decrypt | fromJson -}}
 [user]
-    name  = {{ promptStringOnce . "gitName"  "Git full name" | quote }}
-    email = {{ promptStringOnce . "gitEmail" "Git email"     | quote }}
+    name  = {{ $identity.name | quote }}
+    email = {{ $identity.email | quote }}
 [core]
     editor = vim
     quotepath = false
