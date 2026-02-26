@@ -6,15 +6,15 @@ Managed by [Chezmoi](https://www.chezmoi.io/). Supports macOS and Linux (Arch/Ub
 
 ```bash
 # Personal
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=personal
 
 # Work
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=work
 
 # Remote server
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=remote
 ```
 
@@ -26,7 +26,7 @@ CHEZMOI_INSTALL_GO=1 \
 CHEZMOI_INSTALL_RUST=1 \
 CHEZMOI_INSTALL_NODE=1 \
 CHEZMOI_INSTALL_UV=1 \
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang
 ```
 
