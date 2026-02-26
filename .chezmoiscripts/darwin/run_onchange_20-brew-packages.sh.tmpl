@@ -1,4 +1,3 @@
 #!/bin/bash
 # Brewfile hash: {{ include "platform/darwin/Brewfile" | sha256sum }}
-set -e
-brew bundle --no-upgrade --file="{{ .chezmoi.sourceDir }}/platform/darwin/Brewfile"
+brew bundle --no-upgrade --file="{{ .chezmoi.sourceDir }}/platform/darwin/Brewfile" || echo "brew bundle: some packages failed to install"
