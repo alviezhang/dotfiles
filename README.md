@@ -18,6 +18,29 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=remote
 ```
 
+You can also configure machine type and language tools via environment variables:
+
+```bash
+CHEZMOI_MACHINE_TYPE=work \
+CHEZMOI_INSTALL_GO=1 \
+CHEZMOI_INSTALL_RUST=1 \
+CHEZMOI_INSTALL_NODE=1 \
+CHEZMOI_INSTALL_UV=1 \
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+  init --apply alviezhang
+```
+
+- `CHEZMOI_MACHINE_TYPE`: `personal` / `work` / `remote`
+- `CHEZMOI_INSTALL_GO`, `CHEZMOI_INSTALL_RUST`, `CHEZMOI_INSTALL_NODE`, `CHEZMOI_INSTALL_UV`: set to non-empty value (e.g. `1`) to enable
+
+For no-interactive init/apply, configure `.password` first:
+
+```bash
+mkdir -p ~/.local/share/chezmoi
+echo -n "your-passphrase" > ~/.local/share/chezmoi/.password
+chmod 600 ~/.local/share/chezmoi/.password
+```
+
 ## Enable Language Tools
 
 Language tools default to not installed. After init, edit config to enable:
@@ -77,12 +100,7 @@ Machine type and OS are independent dimensions. System packages auto-detect by O
 
 ## Secrets
 
-Non-interactive decryption via `.password` file (gitignored) + `rage`:
-
-```bash
-# 创建 .password（首次 init 前，或在新机器上）
-echo -n "your-passphrase" > ~/.local/share/chezmoi/.password
-```
+For no-interactive runs, prepare `.password` first (gitignored). Current flow uses `expect`, no `rage` required.
 
 无 `.password` 时 fallback 到手动输入密码。
 
@@ -90,8 +108,14 @@ echo -n "your-passphrase" > ~/.local/share/chezmoi/.password
 # 编辑加密文件
 scripts/edit-secret git-identity.toml.age
 
-# 轮换密码
+# 轮换密码（手动输入）
 scripts/rotate-password
+
+# 自动生成 A-Za-z0-9 密码（默认长度 32）
+scripts/rotate-password --auto
+
+# 同步 .password 到指定目录
+scripts/rotate-password --auto --password-dir ~/.local/share/chezmoi
 ```
 
 See [DESIGN.md](DESIGN.md) for requirements and design decisions.
