@@ -1,26 +1,22 @@
-.PHONY: brew cask
+.PHONY: install brew pipx update clean uninstall
 
-install: brew cask
+install: brew pipx
 
 brew:
-	echo "Install brew packages"
-	grep -vE '^$|[#;]' packages.list | xargs brew install
+	brew bundle install
 
-cask:
-	echo "Install brew cask packages"
-	grep -vE '^$|[#;]' casks.list | xargs brew install --cask
+pipx:
+	grep -vE '^$$|[#;]' pipx.list | xargs -I{} pipx install {}
 
 update:
-	brew update
+	brew bundle install
 	brew upgrade
 	brew upgrade --cask
-
-config:
-	cp -r karabiner $(HOME)/.config/karabiner
+	pipx upgrade-all
 
 clean:
 	brew cleanup --prune 1
 
 uninstall:
-	brew list | xargs brew uninstall
+	brew list --formula | xargs brew uninstall
 	brew list --cask | xargs brew uninstall --cask
