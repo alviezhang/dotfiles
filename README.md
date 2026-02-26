@@ -75,10 +75,23 @@ Machine type and OS are independent dimensions. System packages auto-detect by O
 
 `.zshrc` auto-detects installed tools at runtime — manually installed tools also work.
 
-## Edit Secrets
+## Secrets
+
+Non-interactive decryption via `.password` file (gitignored) + `rage`:
 
 ```bash
+# 创建 .password（首次 init 前，或在新机器上）
+echo -n "your-passphrase" > ~/.local/share/chezmoi/.password
+```
+
+无 `.password` 时 fallback 到手动输入密码。
+
+```bash
+# 编辑加密文件
 scripts/edit-secret git-identity.toml.age
+
+# 轮换密码
+scripts/rotate-password
 ```
 
 See [DESIGN.md](DESIGN.md) for requirements and design decisions.
