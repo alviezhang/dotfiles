@@ -1,19 +1,35 @@
 #!/bin/bash
 # key.txt.age hash: {{ include "key.txt.age" | sha256sum }}
+# No early-exit: always re-decrypt when key.txt.age changes (e.g. after password rotation)
 set -e
 
 KEY_FILE="${HOME}/.config/chezmoi/key.txt"
 SOURCE_DIR="{{ .chezmoi.sourceDir }}"
 
-[ -f "$KEY_FILE" ] && exit 0
-
 mkdir -p "${HOME}/.config/chezmoi"
 
-if [ -f "$SOURCE_DIR/.password" ] && command -v rage &>/dev/null; then
-    # 非交互：从 .password 读取密码，用 rage 解密
-    RAGE_PASSPHRASE=$(cat "$SOURCE_DIR/.password") rage -d -o "$KEY_FILE" "$SOURCE_DIR/key.txt.age"
+# 密码来源：环境变量 > .password 文件 > 交互式输入
+PASSWORD=""
+if [ -n "$CHEZMOI_AGE_PASSWORD" ]; then
+    PASSWORD="$CHEZMOI_AGE_PASSWORD"
+elif [ -f "$SOURCE_DIR/.password" ]; then
+    PASSWORD="$(sed 's/[[:space:]]*$//' "$SOURCE_DIR/.password")"
+fi
+
+if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
+    # 非交互：用 expect 提供密码给 age（通过环境变量避免进程参数泄露）
+    AGE_PW="$PASSWORD" AGE_KEY="$KEY_FILE" AGE_SRC="$SOURCE_DIR/key.txt.age" \
+    expect -c '
+        log_user 0
+        spawn age -d -o $env(AGE_KEY) $env(AGE_SRC)
+        expect "Enter passphrase:"
+        send "$env(AGE_PW)\r"
+        expect eof
+        catch wait result
+        exit [lindex $result 3]
+    '
 else
-    # 交互：手动输入密码（rage 不可用或 .password 不存在）
+    # 交互式输入密码
     chezmoi age decrypt --output "$KEY_FILE" --passphrase "$SOURCE_DIR/key.txt.age"
 fi
 
