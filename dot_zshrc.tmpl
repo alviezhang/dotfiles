@@ -14,7 +14,9 @@ plugins=(git golang
   {{- if eq .chezmoi.osRelease.id "debian" }} debian{{ end }}
 {{- end }})
 
-source $ZSH/oh-my-zsh.sh
+if [[ -s "$ZSH/oh-my-zsh.sh" ]]; then
+  source "$ZSH/oh-my-zsh.sh"
+fi
 
 # --- PATH 集中配置（按工具存在性加载） ---
 
