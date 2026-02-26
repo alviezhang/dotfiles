@@ -5,11 +5,9 @@ Managed by [Chezmoi](https://www.chezmoi.io/). Supports macOS and Linux (Arch/Ub
 ## Install
 
 ```bash
-# Personal (full toolchain)
+# Personal
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
-  init --apply alviezhang --promptString machineType=personal \
-  --promptBool installGo=true --promptBool installRust=true \
-  --promptBool installNode=true --promptBool installUv=true
+  init --apply alviezhang --promptString machineType=personal
 
 # Work
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
@@ -20,13 +18,24 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=remote
 ```
 
-Language tools default to **not installed**. Enable with `--promptBool`:
+## Enable Language Tools
+
+Language tools default to not installed. After init, edit config to enable:
 
 ```bash
---promptBool installGo=true
---promptBool installRust=true
---promptBool installNode=true
---promptBool installUv=true
+vim ~/.config/chezmoi/chezmoi.toml
+```
+
+```toml
+[data]
+  installGo   = true
+  installRust = true
+  installNode = true
+  installUv   = true
+```
+
+```bash
+chezmoi apply
 ```
 
 ## Update
@@ -37,7 +46,7 @@ chezmoi update
 
 ## Machine Types
 
-Machine type and OS are **independent dimensions**. System packages are auto-detected by OS.
+Machine type and OS are independent dimensions. System packages auto-detect by OS.
 
 |  | personal | work | remote |
 |---|:---:|:---:|:---:|
@@ -47,17 +56,15 @@ Machine type and OS are **independent dimensions**. System packages are auto-det
 | vim + plugins | ✓ | ✓ | ✓ |
 | Git identity | age encrypted | age encrypted | age encrypted |
 
-**System packages** (auto by OS, all machine types):
+**System packages** (auto by OS):
 
-| OS | Package manager | Packages |
+| OS | Package manager | Config |
 |---|---|---|
-| macOS | Homebrew (brew bundle) | `platform/darwin/Brewfile` |
+| macOS | Homebrew | `platform/darwin/Brewfile` |
 | Ubuntu/Debian | apt | `platform/linux/apt.list` |
 | Arch | pacman | `platform/linux/pacman.list` |
 
 ## Language Tools
-
-All default to false. Independent of machine type and OS.
 
 | Flag | Tool | Install method |
 |------|------|---------------|
@@ -66,11 +73,12 @@ All default to false. Independent of machine type and OS.
 | `installNode` | Node.js | fnm (curl) |
 | `installUv` | uv | pipx |
 
-**Change after install:**
+`.zshrc` auto-detects installed tools at runtime — manually installed tools also work.
+
+## Edit Secrets
 
 ```bash
-vim ~/.config/chezmoi/chezmoi.toml    # edit flags
-chezmoi apply                         # re-apply
+scripts/edit-secret git-identity.toml.age
 ```
 
 See [DESIGN.md](DESIGN.md) for requirements and design decisions.

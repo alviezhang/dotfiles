@@ -71,7 +71,7 @@
 使用 **age 加密 + 密码保护**：
 - 加密后的私钥（`key.txt.age`）存在仓库中，用密码保护
 - 新机器 `chezmoi init` 时输入密码解密私钥，之后自动解密所有加密文件
-- Git 用户名/邮箱存在 `git-identity.json.age`，模板自动解密读取，无需 prompt
+- Git 用户名/邮箱存在 `git-identity.toml.age`，模板自动解密读取，无需 prompt
 - 其他敏感文件通过 `chezmoi add --encrypt` 加入仓库
 
 ## 关键约束
