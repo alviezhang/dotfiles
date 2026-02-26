@@ -1,8 +1,7 @@
 [core]
     editor = vim
-[user]
-    name = Alvie Zhang
-    email = alvie.zhang@gmail.com
+[include]
+    path = ~/.gitconfig.local
 [merge]
     tool = vimdiff
 [color]

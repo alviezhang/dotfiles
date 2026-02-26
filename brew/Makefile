@@ -8,19 +8,19 @@ brew:
 
 cask:
 	echo "Install brew cask packages"
-	grep -vE '^$|[#;]' casks.list | xargs brew cask install
+	grep -vE '^$|[#;]' casks.list | xargs brew install --cask
 
 update:
 	brew update
 	brew upgrade
-	brew cask upgrade
+	brew upgrade --cask
 
 config:
-	cp -r karabiner /Users/alvie/.config/karabiner
+	cp -r karabiner $(HOME)/.config/karabiner
 
 clean:
 	brew cleanup --prune 1
 
 uninstall:
 	brew list | xargs brew uninstall
-	brew cask list | xargs brew cask uninstall
+	brew list --cask | xargs brew uninstall --cask

@@ -34,9 +34,9 @@ fi
 
 proxy() {
   export PROXYHOST=${PROXYHOST:-10.0.10.20}
-  export http_proxy=http://$PROXYHOST:7890
-  export https_proxy=http://$PROXYHOST:7890
-  export all_proxy=socks5://$PROXYHOST:7891
+  export http_proxy=http://$PROXYHOST:${PROXYHTTPPORT:-7890}
+  export https_proxy=http://$PROXYHOST:${PROXYHTTPPORT:-7890}
+  export all_proxy=socks5://$PROXYHOST:${PROXYSOCKSPORT:-7891}
   echo "✅ Proxy ON"
 }
 
