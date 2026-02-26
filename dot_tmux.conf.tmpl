@@ -1,0 +1,10 @@
+{{ if not .remote -}}
+# gpakosz/.tmux 主题（通过 .chezmoiexternal 克隆到 ~/.tmux/）
+source-file ~/.tmux/.tmux.conf
+{{ else -}}
+# remote 精简配置
+set -g mouse on
+set -g history-limit 10000
+set -g status-keys vi
+set -g mode-keys vi
+{{ end -}}

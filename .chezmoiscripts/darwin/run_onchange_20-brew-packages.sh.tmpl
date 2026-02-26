@@ -1,0 +1,4 @@
+#!/bin/bash
+# Brewfile hash: {{ include "platform/darwin/Brewfile" | sha256sum }}
+set -e
+brew bundle --no-upgrade --file="{{ .chezmoi.sourceDir }}/platform/darwin/Brewfile"

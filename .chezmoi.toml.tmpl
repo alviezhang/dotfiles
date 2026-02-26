@@ -1,0 +1,19 @@
+{{- $machineType := promptStringOnce . "machineType" "Machine type (personal/work/remote)" -}}
+{{- $installGo := promptBoolOnce . "installGo" "Install Go" -}}
+{{- $installRust := promptBoolOnce . "installRust" "Install Rust (rustup)" -}}
+{{- $installNode := promptBoolOnce . "installNode" "Install Node.js (fnm)" -}}
+{{- $installUv := promptBoolOnce . "installUv" "Install uv (via pipx)" -}}
+[data]
+  machineType = {{ $machineType | quote }}
+  personal    = {{ eq $machineType "personal" }}
+  work        = {{ eq $machineType "work" }}
+  remote      = {{ eq $machineType "remote" }}
+  installGo   = {{ $installGo }}
+  installRust = {{ $installRust }}
+  installNode = {{ $installNode }}
+  installUv   = {{ $installUv }}
+
+encryption = "age"
+[age]
+  identity = "~/.config/chezmoi/key.txt"
+  recipient = "age1TODO"  # 生成密钥后替换，见 DESIGN.md

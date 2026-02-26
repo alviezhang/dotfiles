@@ -1,0 +1,23 @@
+# System utilities
+htop
+tmux
+
+# File and text utilities
+tree
+ripgrep
+jq
+wget
+curl
+
+# Networking utilities
+mtr
+openssh-client
+
+# Developer tools
+git
+gh
+
+# Build tools (needed for Rust, Python extensions, etc.)
+pipx
+age
+build-essential

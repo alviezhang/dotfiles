@@ -1,0 +1,6 @@
+#!/bin/bash
+{{ if not .installRust }}exit 0{{ end }}
+command -v rustup &>/dev/null && exit 0
+set -e
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+  | sh -s -- -y --no-modify-path

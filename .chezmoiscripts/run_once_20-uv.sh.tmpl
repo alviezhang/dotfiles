@@ -1,0 +1,5 @@
+#!/bin/bash
+{{ if not .installUv }}exit 0{{ end }}
+command -v uv &>/dev/null && exit 0
+set -e
+pipx install uv

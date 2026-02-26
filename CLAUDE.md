@@ -4,63 +4,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a modular dotfiles repository supporting macOS and Linux (Arch/Ubuntu/Debian). Each tool has its own subdirectory with a `Makefile` providing a consistent `install`/`uninstall` interface.
+This is a dotfiles repository managed by [Chezmoi](https://www.chezmoi.io/), supporting macOS and Linux (Arch/Ubuntu/Debian). The repo root is the chezmoi source directory.
 
-## Install & Uninstall
+See [DESIGN.md](DESIGN.md) for requirements and design decisions.
 
-```bash
-# Install one or more modules
-./install.sh [module1] [module2] ...
-
-# Uninstall one or more modules
-./uninstall.sh [module1] [module2] ...
-
-# Or directly via make
-make -C <module> install
-make -C <module> uninstall
-```
-
-Available modules: `brew`, `tmux`, `ohmyzsh`, `vim`, `git`, `pyenv`, `macports`, `archlinux`
-
-### Typical setups
+## Quick Start
 
 ```bash
-# macOS full setup
-./install.sh brew macports tmux ohmyzsh vim git pyenv
+# New machine: install chezmoi + apply all dotfiles
+make install
 
-# Linux (Arch) setup
-./install.sh ohmyzsh vim git pyenv archlinux
+# Re-apply after editing source files
+make apply
+
+# Pull repo updates and re-apply
+make update
 ```
 
-## Module Architecture
+## Machine Types
 
-Each module follows the same pattern:
+On first `chezmoi init`, you'll be prompted for:
+- **Machine type**: personal / work / remote
+- **Tool switches**: Rust, Node.js, uv — per-machine toggle
 
-- A `Makefile` with at minimum `install` and `uninstall` targets
-- Config files that get either symlinked or copied to `~` or `~/.config/`
+## Directory Structure
 
-Key modules:
+- **`dot_*` / `symlink_dot_*`** — Chezmoi-managed dotfiles (placed into `~/`)
+- **`dot_oh-my-zsh/custom/`** — Oh My Zsh custom scripts (proxy, OS aliases)
+- **`dot_config/`** — XDG config files (fontconfig for Linux)
+- **`platform/`** — OS-specific package lists (not placed into `~/`)
+  - `darwin/Brewfile` — Homebrew formulas and casks
+  - `linux/apt.list` / `pacman.list` — Linux package lists
+- **`.chezmoiscripts/`** — Install scripts (run by chezmoi)
+  - Root level: cross-platform (ohmyzsh, vim plugins, uv, rust, fnm)
+  - `darwin/`: Homebrew install + brew bundle
+  - `linux/`: apt/pacman package install
 
-- **brew/** — Homebrew package lists (`packages.list`, `casks.list`, `essentials.list`) and Karabiner config
-- **tmux/** — Based on [gpakosz/.tmux](https://github.com/gpakosz/.tmux); local overrides live in `tmux/tmux.conf.local` which gets copied to `~/.tmux.conf.local`
-- **ohmyzsh/** — Patches `~/.zshrc` to source `preload.zsh`; platform-specific config in `macos.zsh` / `linux.zsh`; dev tooling (NVM, Go, pyenv, Rust) in `dev.zsh`
-- **vim/** — Uses Vundle; `vimrc` is copied to `~/.vimrc` and plugins are auto-installed
-- **git/** — `gitconfig` copied to `~/.gitconfig` (includes SSH-over-HTTPS redirect for GitHub)
-- **archlinux/fontconfig/** — Symlinks `.conf` files into `~/.config/fontconfig/conf.d/`
-- **macports/** — Runs `sudo port install` for each entry in `ports.txt`
+## Key Files
 
-## ohmyzsh Patching Mechanism
-
-`ohmyzsh/install.zsh` inserts a `source preload.zsh` block into `~/.zshrc` immediately after the `plugins=()` line. `preload.zsh` selects plugins based on the current OS. To reapply after changes:
-
-```bash
-make -C ohmyzsh repatch
-```
-
-## tmux Local Config
-
-`tmux/tmux.conf.local` is the only file you should edit for tmux customizations — it is copied (not symlinked) to `~/.tmux.conf.local`. After editing, copy it manually or run `make -C tmux install` again.
-
-## Proxy Helper (ohmyzsh/dev.zsh)
-
-The shell provides `proxy` and `direct` functions for toggling HTTP/HTTPS/SOCKS proxy settings. The proxy host can be customized via environment variables.
+- `.chezmoi.toml.tmpl` — Machine type, tool switches, Bitwarden config
+- `.chezmoiexternal.toml.tmpl` — External deps (gpakosz/.tmux)
+- `.chezmoiignore.tmpl` — Files excluded from `~/`
+- `DESIGN.md` — Requirements and design decisions

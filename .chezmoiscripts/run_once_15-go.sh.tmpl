@@ -1,0 +1,13 @@
+#!/bin/bash
+{{ if not .installGo }}exit 0{{ end }}
+command -v go &>/dev/null && exit 0
+set -e
+{{ if eq .chezmoi.os "darwin" -}}
+brew install go
+{{ else if eq .chezmoi.os "linux" -}}
+  {{ if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") -}}
+sudo apt-get install -y golang-go
+  {{ else if or (eq .chezmoi.osRelease.id "arch") (eq .chezmoi.osRelease.id "endeavouros") -}}
+sudo pacman -S --needed --noconfirm go
+  {{ end -}}
+{{ end -}}

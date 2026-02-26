@@ -1,0 +1,7 @@
+{{ if not .remote -}}
+[".tmux"]
+  type       = "git-repo"
+  url        = "https://github.com/gpakosz/.tmux.git"
+  clone.args = ["--depth", "1"]
+  pull.args  = ["--ff-only"]
+{{ end -}}

@@ -1,25 +1,18 @@
 # dotfiles
 
-## Lists of active configurations
-
-Active tool configurations:
-- git
-- ohmyfish
-- tmux
-- vim
-
-Active OS specific configurations:
-- archlinux
-- brew
+Managed by [Chezmoi](https://www.chezmoi.io/). Supports macOS and Linux (Arch/Ubuntu/Debian).
 
 ## Install
 
 ```bash
-./install.sh [target1] [target2]
+# New machine
+make install
+
+# Re-apply
+make apply
+
+# Pull updates and re-apply
+make update
 ```
 
-For example:
-
-```bash
-./install.sh tmux vim brew
-```
+See [DESIGN.md](DESIGN.md) for requirements and design decisions.

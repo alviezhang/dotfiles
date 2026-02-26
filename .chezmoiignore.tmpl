@@ -1,0 +1,18 @@
+# 非 dotfile 文件
+Makefile
+README.md
+CLAUDE.md
+DESIGN.md
+.gitignore
+
+# 数据目录
+platform
+
+# age 加密密钥（由 decrypt 脚本处理，不放入 ~/）
+key.txt.age
+
+# OS 专属配置文件，按 OS 过滤
+{{ if ne .chezmoi.os "linux" }}dot_config/fontconfig{{ end }}
+
+# remote 不使用 gpakosz/.tmux 主题的 local 配置
+{{ if .remote }}dot_tmux.conf.local{{ end }}
