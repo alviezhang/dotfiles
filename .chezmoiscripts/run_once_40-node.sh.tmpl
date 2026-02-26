@@ -1,0 +1,12 @@
+#!/bin/bash
+{{ if not .installNode }}exit 0{{ end }}
+set -e
+if ! command -v fnm &>/dev/null; then
+  curl -fsSL https://fnm.vercel.app/install | bash -s -- \
+    --install-dir "$HOME/.local/share/fnm" \
+    --skip-shell
+fi
+export PATH="$HOME/.local/share/fnm:$PATH"
+eval "$(fnm env)"
+fnm install --lts
+fnm default lts-latest

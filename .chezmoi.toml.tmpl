@@ -4,6 +4,10 @@
 {{- else -}}
 {{-   $machineType = promptStringOnce . "machineType" "machineType" -}}
 {{- end -}}
+{{- $installGo   := or (env "CHEZMOI_INSTALL_GO"   | not | not) (and (hasKey . "installGo")   .installGo)   -}}
+{{- $installRust := or (env "CHEZMOI_INSTALL_RUST" | not | not) (and (hasKey . "installRust") .installRust) -}}
+{{- $installNode := or (env "CHEZMOI_INSTALL_NODE" | not | not) (and (hasKey . "installNode") .installNode) -}}
+{{- $installUv   := or (env "CHEZMOI_INSTALL_UV"   | not | not) (and (hasKey . "installUv")   .installUv)   -}}
 encryption = "age"
 [age]
   identity = "~/.config/chezmoi/key.txt"
@@ -14,7 +18,7 @@ encryption = "age"
   personal    = {{ eq $machineType "personal" }}
   work        = {{ eq $machineType "work" }}
   remote      = {{ eq $machineType "remote" }}
-  installGo   = {{ if hasKey . "installGo" }}{{ .installGo }}{{ else }}false{{ end }}
-  installRust = {{ if hasKey . "installRust" }}{{ .installRust }}{{ else }}false{{ end }}
-  installNode = {{ if hasKey . "installNode" }}{{ .installNode }}{{ else }}false{{ end }}
-  installUv   = {{ if hasKey . "installUv" }}{{ .installUv }}{{ else }}false{{ end }}
+  installGo   = {{ $installGo }}
+  installRust = {{ $installRust }}
+  installNode = {{ $installNode }}
+  installUv   = {{ $installUv }}

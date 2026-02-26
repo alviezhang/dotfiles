@@ -1,7 +1,0 @@
-#!/bin/bash
-{{ if not .installNode }}exit 0{{ end }}
-set -e
-command -v fnm &>/dev/null && exit 0
-curl -fsSL https://fnm.vercel.app/install | bash -s -- \
-  --install-dir "$HOME/.local/share/fnm" \
-  --skip-shell
