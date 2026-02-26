@@ -7,23 +7,25 @@
 3. **包列表变更无法自动重跑**：新增一个 brew 包后，已有机器不会自动安装
 4. **跨 OS 流程不统一**：macOS 和 Linux 的安装流程完全分开，难以维护
 
-## 需要支持的场景
+## 两个正交维度
 
-### 机器类型
+### 机器类型（控制行为差异）
 
 | 机器类型 | 描述 |
 |---------|------|
-| **personal** | 个人 macOS 机器 |
-| **work** | 工作 macOS 机器 |
-| **remote** | Linux 服务器，无 GUI，只需基础 CLI 工具 |
+| **personal** | 个人机器（macOS 或 Linux） |
+| **work** | 工作机器（macOS 或 Linux） |
+| **remote** | 远程服务器（Linux），精简配置 |
 
-### 操作系统
+### 操作系统（自动检测，控制包管理和平台配置）
 
 | OS | 包管理器 |
 |----|---------|
-| macOS | Homebrew（remote 不会是 macOS） |
+| macOS | Homebrew |
 | Ubuntu/Debian | apt |
 | Arch Linux | pacman |
+
+机器类型和 OS 独立——personal/work 可以是 macOS 也可以是 Linux，系统包按 OS 自动安装。
 
 ## 需要管理的内容
 
@@ -31,15 +33,17 @@
 
 | 配置 | 目标路径 | 差异化 |
 |------|---------|--------|
-| Git 配置 | `~/.gitconfig` | 首次提示输入用户名/邮箱，缓存到 chezmoi state |
+| Git 配置 | `~/.gitconfig` | 用户名/邮箱从 age 加密文件读取 |
 | Vim 配置 | `~/.vimrc` | 无差异 |
-| Tmux 配置 | `~/.tmux.conf.local` | 无差异 |
 | Tmux 配置 | `~/.tmux.conf` | 非 remote：source gpakosz/.tmux 主题；remote：精简配置 |
+| Tmux 本地配置 | `~/.tmux.conf.local` | 非 remote 才部署 |
 | Zsh 配置 | `~/.zshrc` | chezmoi 完全接管；plugins 按 OS 自动选择 |
 | Zsh 自定义 | `~/.oh-my-zsh/custom/` | proxy 配置、OS 特定设置 |
 | Fontconfig | `~/.config/fontconfig/conf.d/` | 仅 Linux |
 
 ### 系统包
+
+按 OS 自动检测，所有机器类型均安装：
 
 | 平台 | 格式 | 说明 |
 |------|------|------|
@@ -51,14 +55,14 @@
 
 ### 语言工具
 
-通过 `chezmoi init` 提示开关控制是否**自动安装**：
+默认不安装，通过 `--promptBool` 或编辑 `~/.config/chezmoi/chezmoi.toml` 启用：
 
 | 工具 | 安装方式 | 安装位置 |
 |------|---------|---------|
+| Go | brew / apt / pacman | 系统路径 |
 | uv | pipx install | ~/.local/bin/ |
 | Rust | rustup（curl） | ~/.rustup/ + ~/.cargo/bin/ |
 | Node.js | fnm（curl） | ~/.local/share/fnm/ |
-| Go | 随系统包安装（brew/apt/pacman） | 系统路径 |
 
 **工具环境加载原则**：`.zshrc` 按运行时存在性检测加载（装了就用），不依赖 chezmoi 配置。即使选了不自动安装，手动装上后下次开 shell 也能自动生效。
 
@@ -67,23 +71,17 @@
 使用 **age 加密 + 密码保护**：
 - 加密后的私钥（`key.txt.age`）存在仓库中，用密码保护
 - 新机器 `chezmoi init` 时输入密码解密私钥，之后自动解密所有加密文件
-- 敏感文件通过 `chezmoi add --encrypt` 加入仓库
-- git 用户名/邮箱通过 `promptStringOnce` 首次提示输入（非 secret，不需要加密）
-
-一次性设置步骤：
-```bash
-chezmoi cd
-chezmoi age-keygen | chezmoi age encrypt --passphrase --output=key.txt.age
-# 记录输出的 public key (age1...)，填入 .chezmoi.toml.tmpl 的 recipient
-```
+- Git 用户名/邮箱存在 `git-identity.json.age`，模板自动解密读取，无需 prompt
+- 其他敏感文件通过 `chezmoi add --encrypt` 加入仓库
 
 ## 关键约束
 
 1. **幂等性**：多次运行结果一致，工具已安装则跳过
 2. **包列表变更可追踪**：Brewfile / apt.list / pacman.list 变化时自动重跑安装
 3. **无需 sudo 安装语言工具**：uv/fnm/rustup 均安装到用户目录
-4. **单命令引导**：新机器只需 `make install`
-5. **PATH 集中配置**：所有 PATH 设置在 `.zshrc` 一处完成，按工具存在性条件加载
+4. **单命令引导**：新机器一行 curl 命令完成安装
+5. **无交互 prompt**：除 age 密码外，所有配置通过命令行参数或配置文件指定
+6. **PATH 集中配置**：所有 PATH 设置在 `.zshrc` 一处完成，按工具存在性条件加载
 
 ## 不在范围内
 
