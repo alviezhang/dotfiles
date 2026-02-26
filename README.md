@@ -5,14 +5,13 @@ Managed by [Chezmoi](https://www.chezmoi.io/). Supports macOS and Linux (Arch/Ub
 ## Install
 
 ```bash
-# New machine
-make install
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" init --apply alviezhang
+```
 
-# Re-apply
-make apply
+## Update
 
-# Pull updates and re-apply
-make update
+```bash
+chezmoi update
 ```
 
 See [DESIGN.md](DESIGN.md) for requirements and design decisions.
