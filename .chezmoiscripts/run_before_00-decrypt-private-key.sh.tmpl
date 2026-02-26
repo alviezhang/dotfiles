@@ -1,6 +1,6 @@
 #!/bin/bash
 # key.txt.age hash: {{ include "key.txt.age" | sha256sum }}
-# No early-exit: always re-decrypt when key.txt.age changes (e.g. after password rotation)
+# Re-decrypt on every apply/update so accidental local key edits are self-healed.
 set -e
 
 KEY_FILE="${HOME}/.config/chezmoi/key.txt"
@@ -8,12 +8,14 @@ SOURCE_DIR="{{ .chezmoi.sourceDir }}"
 
 mkdir -p "${HOME}/.config/chezmoi"
 
-# 密码来源：环境变量 > .password 文件 > 交互式输入
+# 密码来源：环境变量 > source 目录 .password > ~/.config/chezmoi/password > 交互式输入
 PASSWORD=""
 if [ -n "$CHEZMOI_AGE_PASSWORD" ]; then
     PASSWORD="$CHEZMOI_AGE_PASSWORD"
 elif [ -f "$SOURCE_DIR/.password" ]; then
     PASSWORD="$(sed 's/[[:space:]]*$//' "$SOURCE_DIR/.password")"
+elif [ -f "$HOME/.config/chezmoi/password" ]; then
+    PASSWORD="$(sed 's/[[:space:]]*$//' "$HOME/.config/chezmoi/password")"
 fi
 
 if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then

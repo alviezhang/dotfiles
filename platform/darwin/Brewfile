@@ -10,7 +10,6 @@ brew "gnupg"
 brew "pipx"
 brew "gh"
 brew "age"
-brew "rage"
 
 # Casks
 cask "alfred"

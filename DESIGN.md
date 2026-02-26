@@ -70,8 +70,8 @@
 
 使用 **age 加密 + 密码保护**：
 - 加密后的私钥（`key.txt.age`）存在仓库中，用密码保护
-- `.password` 文件（gitignored）存储密码，配合 `rage` 实现非交互解密
-- 无 `.password` 或 `rage` 时 fallback 到手动输入密码
+- 密码读取优先级：source 目录 `.password`（gitignored）> `~/.config/chezmoi/password`，配合 `expect + age` 实现非交互解密
+- 无密码文件或 `expect` 时 fallback 到手动输入密码
 - Git 用户名/邮箱存在 `git-identity.toml.age`，模板自动解密读取，无需 prompt
 - 其他敏感文件通过 `chezmoi add --encrypt` 加入仓库
 - 密码轮换：`scripts/rotate-password`（只影响 key.txt.age，其他 .age 文件用公钥加密，不受影响）
