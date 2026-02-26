@@ -1,16 +1,13 @@
 {{- $machineType := promptStringOnce . "machineType" "Machine type (personal/work/remote)" -}}
-{{- $personal := eq $machineType "personal" -}}
-{{- $work := eq $machineType "work" -}}
-{{- $remote := eq $machineType "remote" -}}
 [data]
   machineType = {{ $machineType | quote }}
-  personal    = {{ $personal }}
-  work        = {{ $work }}
-  remote      = {{ $remote }}
-  installGo   = {{ not $remote }}
-  installRust = {{ $personal }}
-  installNode = {{ not $remote }}
-  installUv   = {{ not $remote }}
+  personal    = {{ eq $machineType "personal" }}
+  work        = {{ eq $machineType "work" }}
+  remote      = {{ eq $machineType "remote" }}
+  installGo   = {{ if hasKey . "installGo" }}{{ .installGo }}{{ else }}false{{ end }}
+  installRust = {{ if hasKey . "installRust" }}{{ .installRust }}{{ else }}false{{ end }}
+  installNode = {{ if hasKey . "installNode" }}{{ .installNode }}{{ else }}false{{ end }}
+  installUv   = {{ if hasKey . "installUv" }}{{ .installUv }}{{ else }}false{{ end }}
 
 encryption = "age"
 [age]

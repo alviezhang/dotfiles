@@ -5,9 +5,11 @@ Managed by [Chezmoi](https://www.chezmoi.io/). Supports macOS and Linux (Arch/Ub
 ## Install
 
 ```bash
-# Personal macOS
+# Personal macOS (full toolchain)
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
-  init --apply alviezhang --promptString machineType=personal
+  init --apply alviezhang --promptString machineType=personal \
+  --promptBool installGo=true --promptBool installRust=true \
+  --promptBool installNode=true --promptBool installUv=true
 
 # Work macOS
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
@@ -16,6 +18,15 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
 # Remote Linux server
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=remote
+```
+
+Language tools default to **not installed**. Enable with `--promptBool`:
+
+```bash
+--promptBool installGo=true
+--promptBool installRust=true
+--promptBool installNode=true
+--promptBool installUv=true
 ```
 
 ## Update
@@ -31,27 +42,29 @@ chezmoi update
 | OS | macOS | macOS | Linux |
 | Homebrew + casks | ✓ | ✓ | — |
 | apt / pacman | — | — | ✓ |
-| Go | ✓ | ✓ | — |
-| Rust (rustup) | ✓ | — | — |
-| Node.js (fnm) | ✓ | ✓ | — |
-| uv (via pipx) | ✓ | ✓ | — |
-| tmux (gpakosz theme) | ✓ | ✓ | minimal |
+| tmux | gpakosz theme | gpakosz theme | minimal |
 | oh-my-zsh | ✓ | ✓ | ✓ |
 | vim + plugins | ✓ | ✓ | ✓ |
 | Git identity | age encrypted | age encrypted | age encrypted |
 
-## Configuration
+## Language Tools
 
-All options are derived from machine type, no interactive prompts except the age passphrase.
+All default to false. Enable during install or change after.
 
-| Option | personal | work | remote | Source |
-|--------|:---:|:---:|:---:|--------|
-| `installGo` | true | true | false | auto |
-| `installRust` | true | false | false | auto |
-| `installNode` | true | true | false | auto |
-| `installUv` | true | true | false | auto |
-| Git name/email | — | — | — | `git-identity.json.age` |
+| Flag | Tool | Install method |
+|------|------|---------------|
+| `installGo` | Go | brew / apt / pacman |
+| `installRust` | Rust | rustup (curl) |
+| `installNode` | Node.js | fnm (curl) |
+| `installUv` | uv | pipx |
 
-To override tool flags after init, edit `~/.config/chezmoi/chezmoi.toml` and run `chezmoi apply`.
+**Change after install:**
+
+```bash
+# Edit config
+vim ~/.config/chezmoi/chezmoi.toml
+# Re-apply
+chezmoi apply
+```
 
 See [DESIGN.md](DESIGN.md) for requirements and design decisions.
