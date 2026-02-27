@@ -1,0 +1,67 @@
+#!/bin/bash
+set -e
+
+TMUX_CONF="$HOME/.tmux.conf"
+
+{{- if .remote }}
+# remote: minimal tmux config, no theme.
+if [ -L "$TMUX_CONF" ]; then
+  rm -f "$TMUX_CONF"
+elif [ -e "$TMUX_CONF" ]; then
+  backup="${TMUX_CONF}.bak.$(date +%s)"
+  mv "$TMUX_CONF" "$backup"
+fi
+cat >"$TMUX_CONF" <<'EOF'
+set -g mouse on
+set -g history-limit 10000
+set -g status-keys vi
+set -g mode-keys vi
+EOF
+exit 0
+{{- end }}
+
+command -v git >/dev/null 2>&1 || { echo "git not found, skip tmux theme install"; exit 0; }
+
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+TMUX_THEME_DIR="${TMUX_THEME_DIR:-$XDG_DATA_HOME/tmux/gpakosz-tmux}"
+THEME_TMUX_CONF="$TMUX_THEME_DIR/.tmux.conf"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+TMUX_LOCAL_CONF="${TMUX_LOCAL_CONF:-$XDG_CONFIG_HOME/tmux/tmux.conf.local}"
+TMUX_CONF_LOCAL="$HOME/.tmux.conf.local"
+
+mkdir -p "$(dirname "$TMUX_THEME_DIR")"
+
+if [ -d "$TMUX_THEME_DIR/.git" ]; then
+  git -C "$TMUX_THEME_DIR" pull --ff-only || true
+elif [ -e "$TMUX_THEME_DIR" ]; then
+  backup="${TMUX_THEME_DIR}.bak.$(date +%s)"
+  mv "$TMUX_THEME_DIR" "$backup"
+  git clone --depth 1 https://github.com/gpakosz/.tmux.git "$TMUX_THEME_DIR"
+else
+  git clone --depth 1 https://github.com/gpakosz/.tmux.git "$TMUX_THEME_DIR"
+fi
+
+[ -r "$THEME_TMUX_CONF" ] || { echo "tmux theme config not found: $THEME_TMUX_CONF"; exit 1; }
+
+# Follow gpakosz/.tmux install pattern but keep repo under XDG data:
+# symlink ~/.tmux.conf -> $THEME_TMUX_CONF
+if [ -L "$TMUX_CONF" ]; then
+  rm -f "$TMUX_CONF"
+elif [ -e "$TMUX_CONF" ]; then
+  backup="${TMUX_CONF}.bak.$(date +%s)"
+  mv "$TMUX_CONF" "$backup"
+fi
+
+ln -s "$THEME_TMUX_CONF" "$TMUX_CONF"
+
+# gpakosz/.tmux reads ~/.tmux.conf.local, but we store it under XDG.
+if [ -e "$TMUX_LOCAL_CONF" ]; then
+  if [ -L "$TMUX_CONF_LOCAL" ]; then
+    rm -f "$TMUX_CONF_LOCAL"
+  elif [ -e "$TMUX_CONF_LOCAL" ]; then
+    backup="${TMUX_CONF_LOCAL}.bak.$(date +%s)"
+    mv "$TMUX_CONF_LOCAL" "$backup"
+  fi
+
+  ln -s "$TMUX_LOCAL_CONF" "$TMUX_CONF_LOCAL"
+fi

@@ -35,8 +35,8 @@
 |------|---------|--------|
 | Git 配置 | `~/.gitconfig` | 用户名/邮箱从 age 加密文件读取 |
 | Vim 配置 | `~/.vimrc` | 无差异 |
-| Tmux 配置 | `~/.tmux.conf` | 非 remote：source gpakosz/.tmux 主题；remote：精简配置 |
-| Tmux 本地配置 | `~/.tmux.conf.local` | 非 remote 才部署 |
+| Tmux 配置 | `~/.tmux.conf` | 非 remote：symlink 到 `$XDG_DATA_HOME/tmux/gpakosz-tmux/.tmux.conf`；remote：精简配置 |
+| Tmux 本地配置 | `~/.config/tmux/tmux.conf.local` | 非 remote 才部署（会创建 `~/.tmux.conf.local` symlink 兼容主题） |
 | Zsh 配置 | `~/.zshrc` | chezmoi 完全接管；plugins 按 OS 自动选择 |
 | Zsh 自定义 | `~/.oh-my-zsh/custom/` | proxy 配置、OS 特定设置 |
 | Fontconfig | `~/.config/fontconfig/conf.d/` | 仅 Linux |
@@ -61,8 +61,8 @@
 |------|---------|---------|
 | Go | brew / apt / pacman | 系统路径 |
 | uv | pipx install | ~/.local/bin/ |
-| Rust | rustup（curl） | ~/.rustup/ + ~/.cargo/bin/ |
-| Node.js | fnm（curl） | ~/.local/share/fnm/ |
+| Rust | rustup（curl） | `$XDG_DATA_HOME/rustup` + `$XDG_DATA_HOME/cargo/bin` |
+| Node.js | fnm（curl） | `$XDG_DATA_HOME/fnm` |
 
 **工具环境加载原则**：`.zshrc` 按运行时存在性检测加载（装了就用），不依赖 chezmoi 配置。即使选了不自动安装，手动装上后下次开 shell 也能自动生效。
 

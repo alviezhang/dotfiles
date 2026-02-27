@@ -1,6 +1,7 @@
 # System utilities
 htop
 tmux
+zsh
 
 # File and text utilities
 tree

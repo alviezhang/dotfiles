@@ -6,6 +6,17 @@ export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
+# XDG Base Directory Specification
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+
+# Rust / Cargo (XDG)
+export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
+export RUSTUP_HOME="${RUSTUP_HOME:-$XDG_DATA_HOME/rustup}"
+export PATH="$CARGO_HOME/bin:$PATH"
+
 plugins=(git golang
 {{- if eq .chezmoi.os "darwin" }} macos brew{{ end }}
 {{- if eq .chezmoi.os "linux" }}
@@ -32,15 +43,12 @@ if command -v go &>/dev/null; then
 fi
 
 # Rust
-if [[ -s "$HOME/.cargo/env" ]]; then
-  export RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
-  export RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
-  source "$HOME/.cargo/env"
-fi
+export RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
+export RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
 
 # fnm (Node.js)
-if [[ -d "$HOME/.local/share/fnm" ]]; then
-  export PATH="$HOME/.local/share/fnm:$PATH"
+if [[ -d "$XDG_DATA_HOME/fnm" ]]; then
+  export PATH="$XDG_DATA_HOME/fnm:$PATH"
   eval "$(fnm env --use-on-cd)"
 fi
 

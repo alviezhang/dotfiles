@@ -1,12 +1,14 @@
 #!/bin/bash
 {{ if not .installNode }}exit 0{{ end }}
 set -e
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+FNM_DIR="${FNM_DIR:-$XDG_DATA_HOME/fnm}"
 if ! command -v fnm &>/dev/null; then
   curl -fsSL https://fnm.vercel.app/install | bash -s -- \
-    --install-dir "$HOME/.local/share/fnm" \
+    --install-dir "$FNM_DIR" \
     --skip-shell
 fi
-export PATH="$HOME/.local/share/fnm:$PATH"
+export PATH="$FNM_DIR:$PATH"
 eval "$(fnm env)"
 fnm install --lts
 fnm default lts-latest

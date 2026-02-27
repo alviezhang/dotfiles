@@ -1,6 +1,7 @@
 # 非 dotfile 文件
 Makefile
 README.md
+AGENTS.md
 CLAUDE.md
 DESIGN.md
 .gitignore
@@ -8,6 +9,7 @@ DESIGN.md
 # 数据目录
 platform
 scripts
+.tmux
 
 # age 加密文件（不放入 ~/）
 key.txt.age
@@ -18,4 +20,4 @@ git-identity.toml.age
 {{ if ne .chezmoi.os "linux" }}dot_config/fontconfig{{ end }}
 
 # remote 不使用 gpakosz/.tmux 主题的 local 配置
-{{ if .remote }}dot_tmux.conf.local{{ end }}
+{{ if .remote }}dot_config/tmux/tmux.conf.local{{ end }}
