@@ -1,10 +1,6 @@
 #!/bin/zsh
 
 # 代理配置
-if [[ -f "$HOME/.config/proxy.sh" ]]; then
-  . "$HOME/.config/proxy.sh"
-fi
-
 proxy() {
   export PROXYHOST=${PROXYHOST:-10.0.10.20}
   export http_proxy=http://$PROXYHOST:${PROXYHTTPPORT:-7890}
@@ -17,3 +13,8 @@ direct() {
   unset http_proxy https_proxy all_proxy
   echo "Proxy OFF"
 }
+
+if [[ -f "$HOME/.config/proxy.sh" ]]; then
+  . "$HOME/.config/proxy.sh"
+  proxy
+fi
