@@ -6,7 +6,7 @@ proxy() {
   export http_proxy=http://$PROXYHOST:${PROXYHTTPPORT:-7890}
   export https_proxy=http://$PROXYHOST:${PROXYHTTPPORT:-7890}
   export all_proxy=socks5://$PROXYHOST:${PROXYSOCKSPORT:-7891}
-  echo "Proxy ON"
+  echo "Proxy ON: http=$http_proxy socks=$all_proxy"
 }
 
 direct() {
