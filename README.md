@@ -132,6 +132,9 @@ scripts/rotate-password --auto
 
 # 同步密码到指定文件（默认 ~/.config/chezmoi/password）
 scripts/rotate-password --auto --password-file ~/.config/chezmoi/password
+
+# 兼容旧用法：同步到目录下的 .password
+scripts/rotate-password --auto --password-dir /some/dir
 ```
 
 See [DESIGN.md](DESIGN.md) for requirements and design decisions.
