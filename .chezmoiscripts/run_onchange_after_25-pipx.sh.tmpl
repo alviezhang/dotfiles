@@ -22,8 +22,6 @@ run_as_root() {
 }
 
 ensure_pipx() {
-  local python=""
-
   {{- if eq .chezmoi.os "darwin" }}
   local brew_bin=""
   for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
@@ -32,36 +30,13 @@ ensure_pipx() {
   [ -z "$brew_bin" ] && command -v brew &>/dev/null && brew_bin="$(command -v brew)"
 
   if [ -z "$brew_bin" ]; then
-    echo "Homebrew not found; installing Homebrew..." >&2
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
-      [ -x "$b" ] && brew_bin="$b" && break
-    done
-  fi
-
-  if [ -z "$brew_bin" ]; then
-    echo "brew not found after install attempt; cannot install pipx." >&2
+    echo "brew not found; cannot install pipx." >&2
     return 1
   fi
 
-  # Ensure Homebrew Python is installed (user requested brew Python on macOS).
-  "$brew_bin" install python || true
-
-  local brew_python_prefix=""
-  brew_python_prefix="$("$brew_bin" --prefix python 2>/dev/null || true)"
-  if [ -n "$brew_python_prefix" ] && [ -x "$brew_python_prefix/bin/python3" ]; then
-    python="$brew_python_prefix/bin/python3"
-  elif [ -x /opt/homebrew/bin/python3 ]; then
-    python=/opt/homebrew/bin/python3
-  elif [ -x /usr/local/bin/python3 ]; then
-    python=/usr/local/bin/python3
-  fi
-
-  if [ -z "$python" ]; then
-    echo "Homebrew Python not found; cannot install pipx." >&2
-    return 1
-  fi
+  "$brew_bin" install pipx || true
   {{- else if eq .chezmoi.os "linux" }}
+  local python=""
   if command -v python3 &>/dev/null; then
     python="$(command -v python3)"
   elif [ -x /usr/bin/python3 ]; then
@@ -72,13 +47,10 @@ ensure_pipx() {
     echo "python3 not found; cannot install pipx." >&2
     return 1
   fi
-  {{- end }}
 
-  # Make --user installs land under ~/.local so pipx ends up in ~/.local/bin.
   export PYTHONUSERBASE="${PYTHONUSERBASE:-$HOME/.local}"
 
   if ! "$python" -m pip --version &>/dev/null; then
-    {{- if eq .chezmoi.os "linux" }}
     echo "pip not found; attempting to install python pip/venv via system package manager..." >&2
     if command -v apt-get &>/dev/null; then
       run_as_root apt-get update -q
@@ -91,13 +63,10 @@ ensure_pipx() {
     fi
 
     "$python" -m pip --version &>/dev/null || { echo "pip still not available for: $python" >&2; return 1; }
-    {{- else }}
-    echo "pip not found for: $python" >&2
-    return 1
-    {{- end }}
   fi
 
   "$python" -m pip install --user --upgrade pipx
+  {{- end }}
 }
 
 ensure_pipx
