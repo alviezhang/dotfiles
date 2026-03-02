@@ -59,4 +59,19 @@ if [[ -d "$XDG_DATA_HOME/fnm" ]]; then
   eval "$(fnm env --use-on-cd)"
 fi
 
-export PATH="$HOME/.local/bin:/usr/local/sbin:$PATH"
+# Ensure ~/.local/bin is on PATH (avoid duplicates if already added elsewhere).
+if (( ${path[(ie)$HOME/.local/bin]} > $#path )); then
+  path=("$HOME/.local/bin" "${path[@]}")
+fi
+
+# Add /usr/local/sbin only when it exists on this machine.
+if [[ -d /usr/local/sbin ]] && (( ${path[(ie)/usr/local/sbin]} > $#path )); then
+  user_bin="$HOME/.local/bin"
+  user_bin_idx=${path[(ie)$user_bin]}
+  if (( user_bin_idx <= $#path )); then
+    path=("${path[1,user_bin_idx]}" /usr/local/sbin "${path[user_bin_idx+1,-1]}")
+  else
+    path=(/usr/local/sbin "${path[@]}")
+  fi
+  unset user_bin user_bin_idx
+fi
