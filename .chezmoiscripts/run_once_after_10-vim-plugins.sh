@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
-mkdir -p ~/.vim/bundle
-[ -d ~/.vim/bundle/Vundle.vim ] || \
-  git clone https://github.com/gmarik/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-vim +PluginInstall +qall
+plug_vim="$HOME/.vim/autoload/plug.vim"
+[ -f "$plug_vim" ] || \
+  curl -fLo "$plug_vim" --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+if [ -t 0 ]; then
+  vim +'PlugInstall --sync' +qa
+else
+  echo "No terminal available — run :PlugInstall in vim manually."
+fi

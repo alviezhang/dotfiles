@@ -87,29 +87,9 @@ fi
 
 # fnm (Node.js)
 export FNM_DIR="${FNM_DIR:-$XDG_DATA_HOME/fnm}"
-fnm_exec=""
-if [[ -x "$FNM_DIR/fnm" ]]; then
-  fnm_exec="$FNM_DIR/fnm"
-elif command -v fnm &>/dev/null; then
-  fnm_exec="$(command -v fnm)"
+if command -v fnm &>/dev/null; then
+  eval "$(fnm env --use-on-cd)"
 fi
-if [[ -n "$fnm_exec" ]] && [[ "${_DOTFILES_FNM_ENV_DONE-}" != "$$" ]]; then
-  # Avoid PATH growth in nested shells / repeated sourcing.
-  path=("${path[@]:#${XDG_STATE_HOME}/fnm_multishells/*/bin}")
-  path=("${path[@]:#$FNM_DIR}")
-  if [[ -x "$FNM_DIR/fnm" ]]; then
-    path=("$FNM_DIR" "${path[@]}")
-  fi
-
-  fnm_env="$("$fnm_exec" env --use-on-cd)"
-  fnm_env_status=$?
-  if (( fnm_env_status == 0 )); then
-    eval "$fnm_env"
-    _DOTFILES_FNM_ENV_DONE="$$"
-  fi
-  unset fnm_env fnm_env_status
-fi
-unset fnm_exec
 
 # Ensure ~/.local/bin is on PATH (avoid duplicates if already added elsewhere).
 if (( ${path[(ie)$HOME/.local/bin]} > $#path )); then
