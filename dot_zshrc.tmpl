@@ -34,6 +34,34 @@ if [[ -s "$ZSH/oh-my-zsh.sh" ]]; then
   source "$ZSH/oh-my-zsh.sh"
 fi
 
+# --- Custom helpers (moved from ~/.oh-my-zsh/custom/*.zsh) ---
+
+# 代理配置
+proxy() {
+  export PROXYHOST="${PROXYHOST:-10.0.10.20}"
+  export http_proxy="http://${PROXYHOST}:${PROXYHTTPPORT:-7890}"
+  export https_proxy="http://${PROXYHOST}:${PROXYHTTPPORT:-7890}"
+  export all_proxy="socks5://${PROXYHOST}:${PROXYSOCKSPORT:-7891}"
+  echo "Proxy ON: http=$http_proxy socks=$all_proxy"
+}
+
+direct() {
+  unset http_proxy https_proxy all_proxy
+  echo "Proxy OFF"
+}
+
+if [[ -f "$HOME/.config/proxy.sh" ]]; then
+  . "$HOME/.config/proxy.sh"
+  proxy
+fi
+
+# Linux: 只在 open 未定义且 xdg-open 存在时创建 alias
+{{- if eq .chezmoi.os "linux" }}
+if ! type open &>/dev/null && command -v xdg-open &>/dev/null; then
+  alias open='xdg-open'
+fi
+{{- end }}
+
 # --- PATH 集中配置（按工具存在性加载） ---
 
 {{ if eq .chezmoi.os "darwin" -}}
@@ -54,24 +82,42 @@ if [[ -d "$RUSTUP_HOME" ]]; then
 fi
 
 # fnm (Node.js)
-if [[ -d "$XDG_DATA_HOME/fnm" ]]; then
-  export PATH="$XDG_DATA_HOME/fnm:$PATH"
-  eval "$(fnm env --use-on-cd)"
+export FNM_DIR="${FNM_DIR:-$XDG_DATA_HOME/fnm}"
+fnm_exec=""
+if [[ -x "$FNM_DIR/fnm" ]]; then
+  fnm_exec="$FNM_DIR/fnm"
+elif command -v fnm &>/dev/null; then
+  fnm_exec="$(command -v fnm)"
 fi
+if [[ -n "$fnm_exec" ]] && [[ "${_DOTFILES_FNM_ENV_DONE-}" != "$$" ]]; then
+  # Avoid PATH growth in nested shells / repeated sourcing.
+  path=("${path[@]:#${XDG_STATE_HOME}/fnm_multishells/*/bin}")
+  path=("${path[@]:#$FNM_DIR}")
+
+  eval "$("$fnm_exec" env --use-on-cd)"
+  _DOTFILES_FNM_ENV_DONE="$$"
+fi
+unset fnm_exec
 
 # Ensure ~/.local/bin is on PATH (avoid duplicates if already added elsewhere).
 if (( ${path[(ie)$HOME/.local/bin]} > $#path )); then
   path=("$HOME/.local/bin" "${path[@]}")
 fi
 
-# Add /usr/local/sbin only when it exists on this machine.
-if [[ -d /usr/local/sbin ]] && (( ${path[(ie)/usr/local/sbin]} > $#path )); then
-  user_bin="$HOME/.local/bin"
-  user_bin_idx=${path[(ie)$user_bin]}
-  if (( user_bin_idx <= $#path )); then
-    path=("${path[1,user_bin_idx]}" /usr/local/sbin "${path[user_bin_idx+1,-1]}")
-  else
-    path=(/usr/local/sbin "${path[@]}")
+# Add /usr/local/sbin only when it exists on this machine; otherwise remove it.
+if [[ -d /usr/local/sbin ]]; then
+  if (( ${path[(ie)/usr/local/sbin]} > $#path )); then
+    user_bin="$HOME/.local/bin"
+    user_bin_idx=${path[(ie)$user_bin]}
+    if (( user_bin_idx <= $#path )); then
+      path=("${path[1,user_bin_idx]}" /usr/local/sbin "${path[user_bin_idx+1,-1]}")
+    else
+      path=(/usr/local/sbin "${path[@]}")
+    fi
+    unset user_bin user_bin_idx
   fi
-  unset user_bin user_bin_idx
+else
+  if (( ${path[(ie)/usr/local/sbin]} <= $#path )); then
+    path=("${path[@]:#/usr/local/sbin}")
+  fi
 fi
