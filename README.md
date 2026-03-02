@@ -25,13 +25,13 @@ CHEZMOI_MACHINE_TYPE=work \
 CHEZMOI_INSTALL_GO=1 \
 CHEZMOI_INSTALL_RUST=1 \
 CHEZMOI_INSTALL_NODE=1 \
-CHEZMOI_INSTALL_UV=1 \
+CHEZMOI_INSTALL_PIPX=1 \
 bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang
 ```
 
 - `CHEZMOI_MACHINE_TYPE`: `personal` / `work` / `remote`
-- `CHEZMOI_INSTALL_GO`, `CHEZMOI_INSTALL_RUST`, `CHEZMOI_INSTALL_NODE`, `CHEZMOI_INSTALL_UV`:
+- `CHEZMOI_INSTALL_GO`, `CHEZMOI_INSTALL_RUST`, `CHEZMOI_INSTALL_NODE`, `CHEZMOI_INSTALL_PIPX`:
   - set to `1` / `true` / `yes` / `on` to enable
   - set to `0` / `false` / `no` / `off` to disable
   - unset to follow `~/.config/chezmoi/chezmoi.toml`
@@ -63,7 +63,7 @@ vim ~/.config/chezmoi/chezmoi.toml
   installGo   = true
   installRust = true
   installNode = true
-  installUv   = true
+  installPipx = true
 ```
 
 ```bash
@@ -115,7 +115,7 @@ Machine type and OS are independent dimensions. System packages auto-detect by O
 | `installGo` | Go | brew / apt / pacman |
 | `installRust` | Rust | rustup (curl) |
 | `installNode` | Node.js | fnm (curl) |
-| `installUv` | Python CLIs (pipx) | pipx (installed via Python) |
+| `installPipx` | Python CLIs (pipx) | pipx (installed via Python) |
 
 Rust uses XDG paths by default:
 - `CARGO_HOME=$XDG_DATA_HOME/cargo`

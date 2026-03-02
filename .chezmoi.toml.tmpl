@@ -9,7 +9,7 @@
 {{- $installGoEnv := env "CHEZMOI_INSTALL_GO" | trim | lower -}}
 {{- $installRustEnv := env "CHEZMOI_INSTALL_RUST" | trim | lower -}}
 {{- $installNodeEnv := env "CHEZMOI_INSTALL_NODE" | trim | lower -}}
-{{- $installUvEnv := env "CHEZMOI_INSTALL_UV" | trim | lower -}}
+{{- $installPipxEnv := env "CHEZMOI_INSTALL_PIPX" | trim | lower -}}
 
 {{- $installGo := and (hasKey . "installGo") .installGo -}}
 {{- if ne $installGoEnv "" -}}
@@ -26,9 +26,9 @@
 {{-   $installNode = not (or (eq $installNodeEnv "0") (eq $installNodeEnv "false") (eq $installNodeEnv "no") (eq $installNodeEnv "off")) -}}
 {{- end -}}
 
-{{- $installUv := and (hasKey . "installUv") .installUv -}}
-{{- if ne $installUvEnv "" -}}
-{{-   $installUv = not (or (eq $installUvEnv "0") (eq $installUvEnv "false") (eq $installUvEnv "no") (eq $installUvEnv "off")) -}}
+{{- $installPipx := and (hasKey . "installPipx") .installPipx -}}
+{{- if ne $installPipxEnv "" -}}
+{{-   $installPipx = not (or (eq $installPipxEnv "0") (eq $installPipxEnv "false") (eq $installPipxEnv "no") (eq $installPipxEnv "off")) -}}
 {{- end -}}
 encryption = "age"
 [age]
@@ -43,4 +43,4 @@ encryption = "age"
   installGo   = {{ $installGo }}
   installRust = {{ $installRust }}
   installNode = {{ $installNode }}
-  installUv   = {{ $installUv }}
+  installPipx = {{ $installPipx }}

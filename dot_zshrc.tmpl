@@ -20,7 +20,11 @@ export PIPX_MAN_DIR="${PIPX_MAN_DIR:-$XDG_DATA_HOME/man}"
 # Rust / Cargo (XDG)
 export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
 export RUSTUP_HOME="${RUSTUP_HOME:-$XDG_DATA_HOME/rustup}"
-export PATH="$CARGO_HOME/bin:$PATH"
+if [[ -d "$CARGO_HOME/bin" ]]; then
+  if (( ${path[(ie)$CARGO_HOME/bin]} > $#path )); then
+    path=("$CARGO_HOME/bin" "${path[@]}")
+  fi
+fi
 
 plugins=(git golang
 {{- if eq .chezmoi.os "darwin" }} macos brew{{ end }}

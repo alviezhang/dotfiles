@@ -1,6 +1,6 @@
 #!/bin/bash
 # pipx packages hash: {{ include "packages/pipx.list" | sha256sum }}
-{{ if not .installUv }}exit 0{{ end }}
+{{ if not .installPipx }}exit 0{{ end }}
 set -euo pipefail
 
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
