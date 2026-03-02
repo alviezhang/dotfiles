@@ -1,0 +1,138 @@
+#!/bin/bash
+# pipx packages hash: {{ include "packages/pipx.list" | sha256sum }}
+{{ if not .installUv }}exit 0{{ end }}
+set -euo pipefail
+
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export PIPX_HOME="${PIPX_HOME:-$XDG_DATA_HOME/pipx}"
+export PIPX_BIN_DIR="${PIPX_BIN_DIR:-$HOME/.local/bin}"
+export PIPX_MAN_DIR="${PIPX_MAN_DIR:-$XDG_DATA_HOME/man}"
+
+mkdir -p "$PIPX_BIN_DIR"
+
+run_as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo &>/dev/null; then
+    sudo "$@"
+  else
+    echo "sudo not found; rerun as root to install system packages." >&2
+    return 1
+  fi
+}
+
+ensure_pipx() {
+  local python=""
+
+  {{- if eq .chezmoi.os "darwin" }}
+  local brew_bin=""
+  for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    [ -x "$b" ] && brew_bin="$b" && break
+  done
+  [ -z "$brew_bin" ] && command -v brew &>/dev/null && brew_bin="$(command -v brew)"
+
+  if [ -z "$brew_bin" ]; then
+    echo "Homebrew not found; installing Homebrew..." >&2
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+      [ -x "$b" ] && brew_bin="$b" && break
+    done
+  fi
+
+  if [ -z "$brew_bin" ]; then
+    echo "brew not found after install attempt; cannot install pipx." >&2
+    return 1
+  fi
+
+  # Ensure Homebrew Python is installed (user requested brew Python on macOS).
+  "$brew_bin" install python || true
+
+  local brew_python_prefix=""
+  brew_python_prefix="$("$brew_bin" --prefix python 2>/dev/null || true)"
+  if [ -n "$brew_python_prefix" ] && [ -x "$brew_python_prefix/bin/python3" ]; then
+    python="$brew_python_prefix/bin/python3"
+  elif [ -x /opt/homebrew/bin/python3 ]; then
+    python=/opt/homebrew/bin/python3
+  elif [ -x /usr/local/bin/python3 ]; then
+    python=/usr/local/bin/python3
+  fi
+
+  if [ -z "$python" ]; then
+    echo "Homebrew Python not found; cannot install pipx." >&2
+    return 1
+  fi
+  {{- else if eq .chezmoi.os "linux" }}
+  if command -v python3 &>/dev/null; then
+    python="$(command -v python3)"
+  elif [ -x /usr/bin/python3 ]; then
+    python=/usr/bin/python3
+  fi
+
+  if [ -z "$python" ]; then
+    echo "python3 not found; cannot install pipx." >&2
+    return 1
+  fi
+  {{- end }}
+
+  # Make --user installs land under ~/.local so pipx ends up in ~/.local/bin.
+  export PYTHONUSERBASE="${PYTHONUSERBASE:-$HOME/.local}"
+
+  if ! "$python" -m pip --version &>/dev/null; then
+    {{- if eq .chezmoi.os "linux" }}
+    echo "pip not found; attempting to install python pip/venv via system package manager..." >&2
+    if command -v apt-get &>/dev/null; then
+      run_as_root apt-get update -q
+      run_as_root apt-get install -y python3-pip python3-venv
+    elif command -v pacman &>/dev/null; then
+      run_as_root pacman -S --needed --noconfirm python python-pip
+    else
+      echo "No supported package manager found (apt-get/pacman); install pip manually." >&2
+      return 1
+    fi
+
+    "$python" -m pip --version &>/dev/null || { echo "pip still not available for: $python" >&2; return 1; }
+    {{- else }}
+    echo "pip not found for: $python" >&2
+    return 1
+    {{- end }}
+  fi
+
+  "$python" -m pip install --user --upgrade pipx
+}
+
+ensure_pipx
+
+PIPX_BIN=""
+if [ -x "$PIPX_BIN_DIR/pipx" ]; then
+  PIPX_BIN="$PIPX_BIN_DIR/pipx"
+elif command -v pipx &>/dev/null; then
+  PIPX_BIN="$(command -v pipx)"
+fi
+
+if [ -z "$PIPX_BIN" ]; then
+  echo "pipx not found after install; cannot install pipx packages." >&2
+  echo "Ensure ~/.local/bin is on PATH and re-run chezmoi apply." >&2
+  exit 1
+fi
+
+LIST_FILE="{{ .chezmoi.sourceDir }}/packages/pipx.list"
+if [ ! -f "$LIST_FILE" ]; then
+  echo "pipx package list not found: $LIST_FILE" >&2
+  exit 1
+fi
+
+has_any=0
+while IFS= read -r pkg || [ -n "$pkg" ]; do
+  pkg="${pkg#"${pkg%%[![:space:]]*}"}"
+  pkg="${pkg%"${pkg##*[![:space:]]}"}"
+  case "$pkg" in
+    ""|\#*|\;*) continue ;;
+  esac
+  has_any=1
+  "$PIPX_BIN" install --force "$pkg"
+done < "$LIST_FILE"
+
+if [ "$has_any" -eq 0 ]; then
+  echo "pipx package list is empty; skip."
+  exit 0
+fi

@@ -7,7 +7,7 @@ brew "htop"
 brew "tmux"
 brew "mtr"
 brew "gnupg"
-brew "pipx"
+brew "python"
 brew "gh"
 brew "age"
 

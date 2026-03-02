@@ -1,0 +1,8 @@
+# One package spec per line. Blank lines / comments are ignored.
+#
+# Example:
+#   ruff
+#   httpie
+#
+# uv is required by this repo and will be installed via pipx.
+uv

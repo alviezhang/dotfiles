@@ -1,17 +1,39 @@
+{{- $machineTypeEnv := env "CHEZMOI_MACHINE_TYPE" | trim | lower -}}
 {{- $machineType := "" -}}
-{{- if env "CHEZMOI_MACHINE_TYPE" -}}
-{{-   $machineType = env "CHEZMOI_MACHINE_TYPE" -}}
+{{- if ne $machineTypeEnv "" -}}
+{{-   $machineType = $machineTypeEnv -}}
 {{- else -}}
-{{-   $machineType = promptStringOnce . "machineType" "machineType" -}}
+{{-   $machineType = promptStringOnce . "machineType" "machineType" | trim | lower -}}
 {{- end -}}
-{{- $installGo   := or (env "CHEZMOI_INSTALL_GO"   | not | not) (and (hasKey . "installGo")   .installGo)   -}}
-{{- $installRust := or (env "CHEZMOI_INSTALL_RUST" | not | not) (and (hasKey . "installRust") .installRust) -}}
-{{- $installNode := or (env "CHEZMOI_INSTALL_NODE" | not | not) (and (hasKey . "installNode") .installNode) -}}
-{{- $installUv   := or (env "CHEZMOI_INSTALL_UV"   | not | not) (and (hasKey . "installUv")   .installUv)   -}}
+
+{{- $installGoEnv := env "CHEZMOI_INSTALL_GO" | trim | lower -}}
+{{- $installRustEnv := env "CHEZMOI_INSTALL_RUST" | trim | lower -}}
+{{- $installNodeEnv := env "CHEZMOI_INSTALL_NODE" | trim | lower -}}
+{{- $installUvEnv := env "CHEZMOI_INSTALL_UV" | trim | lower -}}
+
+{{- $installGo := and (hasKey . "installGo") .installGo -}}
+{{- if ne $installGoEnv "" -}}
+{{-   $installGo = not (or (eq $installGoEnv "0") (eq $installGoEnv "false") (eq $installGoEnv "no") (eq $installGoEnv "off")) -}}
+{{- end -}}
+
+{{- $installRust := and (hasKey . "installRust") .installRust -}}
+{{- if ne $installRustEnv "" -}}
+{{-   $installRust = not (or (eq $installRustEnv "0") (eq $installRustEnv "false") (eq $installRustEnv "no") (eq $installRustEnv "off")) -}}
+{{- end -}}
+
+{{- $installNode := and (hasKey . "installNode") .installNode -}}
+{{- if ne $installNodeEnv "" -}}
+{{-   $installNode = not (or (eq $installNodeEnv "0") (eq $installNodeEnv "false") (eq $installNodeEnv "no") (eq $installNodeEnv "off")) -}}
+{{- end -}}
+
+{{- $installUv := and (hasKey . "installUv") .installUv -}}
+{{- if ne $installUvEnv "" -}}
+{{-   $installUv = not (or (eq $installUvEnv "0") (eq $installUvEnv "false") (eq $installUvEnv "no") (eq $installUvEnv "off")) -}}
+{{- end -}}
 encryption = "age"
 [age]
   identity = "~/.config/chezmoi/key.txt"
-  recipient = "age1awmaa5hgt6z6mgzrepnls4flehjgu74tqc7fgu0sm4gg5yd30q8swufm3t"
+  recipient = {{ include "age-recipient.txt" | trim | quote }}
 
 [data]
   machineType = {{ $machineType | quote }}

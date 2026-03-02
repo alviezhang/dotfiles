@@ -1,13 +1,40 @@
 #!/bin/bash
 {{ if not .installGo }}exit 0{{ end }}
 command -v go &>/dev/null && exit 0
-set -e
+set -euo pipefail
+
+run_as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo &>/dev/null; then
+    sudo "$@"
+  else
+    echo "sudo not found; rerun as root to install packages." >&2
+    return 1
+  fi
+}
+
 {{ if eq .chezmoi.os "darwin" -}}
-brew install go
+BREW_BIN=""
+for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+  [ -x "$b" ] && BREW_BIN="$b" && break
+done
+[ -z "$BREW_BIN" ] && command -v brew &>/dev/null && BREW_BIN="$(command -v brew)"
+
+if [ -z "$BREW_BIN" ]; then
+  echo "brew not found; cannot install Go." >&2
+  exit 1
+fi
+
+"$BREW_BIN" install go
 {{ else if eq .chezmoi.os "linux" -}}
-  {{ if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") -}}
-sudo apt-get install -y golang-go
-  {{ else if or (eq .chezmoi.osRelease.id "arch") (eq .chezmoi.osRelease.id "endeavouros") -}}
-sudo pacman -S --needed --noconfirm go
-  {{ end -}}
+if command -v apt-get &>/dev/null; then
+  run_as_root apt-get update -q
+  run_as_root apt-get install -y golang-go
+elif command -v pacman &>/dev/null; then
+  run_as_root pacman -S --needed --noconfirm go
+else
+  echo "No supported package manager found (apt-get/pacman); cannot install Go." >&2
+  exit 1
+fi
 {{ end -}}

@@ -50,8 +50,8 @@ direct() {
   echo "Proxy OFF"
 }
 
-if [[ -f "$HOME/.config/proxy.sh" ]]; then
-  . "$HOME/.config/proxy.sh"
+if [[ -f "$XDG_CONFIG_HOME/proxy.sh" ]]; then
+  . "$XDG_CONFIG_HOME/proxy.sh"
   proxy
 fi
 

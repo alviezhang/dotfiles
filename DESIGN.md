@@ -38,7 +38,7 @@
 | Tmux 配置 | `~/.tmux.conf` | 非 remote：symlink 到 `$XDG_DATA_HOME/tmux/gpakosz-tmux/.tmux.conf`；remote：精简配置 |
 | Tmux 本地配置 | `~/.config/tmux/tmux.conf.local` | 非 remote 才部署（会创建 `~/.tmux.conf.local` symlink 兼容主题） |
 | Zsh 配置 | `~/.zshrc` | chezmoi 完全接管；plugins 按 OS 自动选择 |
-| Zsh 自定义 | `~/.oh-my-zsh/custom/` | proxy 配置、OS 特定设置 |
+| Zsh 自定义 | `~/.zshrc` | proxy / OS 特定 helper 直接内联；可选读取 `~/.config/proxy.sh` |
 | Fontconfig | `~/.config/fontconfig/conf.d/` | 仅 Linux |
 
 ### 系统包
@@ -60,7 +60,7 @@
 | 工具 | 安装方式 | 安装位置 |
 |------|---------|---------|
 | Go | brew / apt / pacman | 系统路径 |
-| uv | pipx install | ~/.local/bin/ |
+| pipx (Python CLIs) | Python `pip install --user` | ~/.local/bin/ |
 | Rust | rustup（curl） | `$XDG_DATA_HOME/rustup` + `$XDG_DATA_HOME/cargo/bin` |
 | Node.js | fnm（curl） | `$XDG_DATA_HOME/fnm` |
 
@@ -70,7 +70,7 @@
 
 使用 **age 加密 + 密码保护**：
 - 加密后的私钥（`key.txt.age`）存在仓库中，用密码保护
-- 密码读取优先级：source 目录 `.password`（gitignored）> `~/.config/chezmoi/password`，配合 `expect + age` 实现非交互解密
+- 密码读取优先级：`$CHEZMOI_AGE_PASSWORD` > `~/.config/chezmoi/password`（推荐）> source 目录 `.password`（legacy，gitignored），配合 `expect + age` 实现非交互解密
 - 无密码文件或 `expect` 时 fallback 到手动输入密码
 - Git 用户名/邮箱存在 `git-identity.toml.age`，模板自动解密读取，无需 prompt
 - 其他敏感文件通过 `chezmoi add --encrypt` 加入仓库
@@ -80,7 +80,7 @@
 
 1. **幂等性**：多次运行结果一致，工具已安装则跳过
 2. **包列表变更可追踪**：Brewfile / apt.list / pacman.list 变化时自动重跑安装
-3. **无需 sudo 安装语言工具**：uv/fnm/rustup 均安装到用户目录
+3. **无需 sudo 安装语言工具**：pipx/fnm/rustup 均安装到用户目录
 4. **单命令引导**：新机器一行 curl 命令完成安装
 5. **无交互 prompt**：除 age 密码外，所有配置通过命令行参数或配置文件指定
 6. **PATH 集中配置**：所有 PATH 设置在 `.zshrc` 一处完成，按工具存在性条件加载

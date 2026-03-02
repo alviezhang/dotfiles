@@ -1,4 +1,4 @@
-.PHONY: install apply update
+.PHONY: install apply update clean
 
 CHEZMOI := $(HOME)/.local/bin/chezmoi
 
@@ -18,3 +18,8 @@ apply:
 update:
 	git pull
 	$(CHEZMOI) apply --source="$(CURDIR)"
+
+# 清理 repo 内的本地杂项（不会影响已应用到 ~ 的配置）
+clean:
+	rm -rf .tmux .worktrees
+	find . -name .DS_Store -delete || true

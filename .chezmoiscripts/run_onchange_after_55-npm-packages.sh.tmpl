@@ -1,0 +1,56 @@
+#!/bin/bash
+# npm packages hash: {{ include "packages/npm.list" | sha256sum }}
+set -euo pipefail
+
+LIST_FILE="{{ .chezmoi.sourceDir }}/packages/npm.list"
+if [ ! -f "$LIST_FILE" ]; then
+  echo "npm package list not found: $LIST_FILE" >&2
+  exit 1
+fi
+
+NPM_BIN=""
+if command -v npm &>/dev/null; then
+  NPM_BIN="$(command -v npm)"
+else
+  # Try to bootstrap npm via fnm without sourcing shell rc files.
+  XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+  XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+  export XDG_STATE_HOME
+
+  FNM_DIR="${FNM_DIR:-$XDG_DATA_HOME/fnm}"
+  FNM_EXEC=""
+  if [ -x "$FNM_DIR/fnm" ]; then
+    FNM_EXEC="$FNM_DIR/fnm"
+  elif command -v fnm &>/dev/null; then
+    FNM_EXEC="$(command -v fnm)"
+  fi
+
+  if [ -n "$FNM_EXEC" ]; then
+    eval "$("$FNM_EXEC" env)"
+    command -v npm &>/dev/null && NPM_BIN="$(command -v npm)"
+  fi
+fi
+
+if [ -z "$NPM_BIN" ]; then
+  echo "npm not found; skip npm packages."
+  exit 0
+fi
+
+export npm_config_audit=false
+export npm_config_fund=false
+
+has_any=0
+while IFS= read -r pkg || [ -n "$pkg" ]; do
+  pkg="${pkg#"${pkg%%[![:space:]]*}"}"
+  pkg="${pkg%"${pkg##*[![:space:]]}"}"
+  case "$pkg" in
+    ""|\#*|\;*) continue ;;
+  esac
+  has_any=1
+  "$NPM_BIN" install -g "$pkg"
+done < "$LIST_FILE"
+
+if [ "$has_any" -eq 0 ]; then
+  echo "npm package list is empty; skip."
+  exit 0
+fi

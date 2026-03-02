@@ -25,18 +25,18 @@ make update
 
 On first `chezmoi init`, you'll be prompted for:
 - **Machine type**: personal / work / remote
-- **Tool switches**: Rust, Node.js, uv — per-machine toggle
+- **Tool switches**: Rust, Node.js, pipx (Python CLIs) — per-machine toggle
 
 ## Directory Structure
 
 - **`dot_*` / `symlink_dot_*`** — Chezmoi-managed dotfiles (placed into `~/`)
-- **`dot_oh-my-zsh/custom/`** — Oh My Zsh custom scripts (proxy, OS aliases)
 - **`dot_config/`** — XDG config files (fontconfig for Linux)
-- **`platform/`** — OS-specific package lists (not placed into `~/`)
+- **`packages/`** — Global package lists (pipx / npm / cargo)
+- **`platform/`** — OS-specific system package lists (not placed into `~/`)
   - `darwin/Brewfile` — Homebrew formulas and casks
   - `linux/apt.list` / `pacman.list` — Linux package lists
 - **`.chezmoiscripts/`** — Install scripts (run by chezmoi)
-  - Root level: cross-platform (ohmyzsh, vim plugins, uv, rust, fnm, tmux theme)
+  - Root level: cross-platform (ohmyzsh, vim plugins, pipx packages, rust, fnm, tmux theme, global packages)
   - `darwin/`: Homebrew install + brew bundle
   - `linux/`: apt/pacman package install
 

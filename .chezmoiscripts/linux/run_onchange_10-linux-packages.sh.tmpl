@@ -1,0 +1,73 @@
+#!/bin/bash
+# linux packages hash (apt): {{ include "platform/linux/apt.list" | sha256sum }}
+# linux packages hash (pacman): {{ include "platform/linux/pacman.list" | sha256sum }}
+{{ if ne .chezmoi.os "linux" }}exit 0{{ end }}
+set -euo pipefail
+
+SOURCE_DIR="{{ .chezmoi.sourceDir }}"
+APT_LIST="$SOURCE_DIR/platform/linux/apt.list"
+PACMAN_LIST="$SOURCE_DIR/platform/linux/pacman.list"
+
+run_as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo &>/dev/null; then
+    sudo "$@"
+  else
+    echo "sudo not found; rerun as root to install packages." >&2
+    return 1
+  fi
+}
+
+if command -v apt-get &>/dev/null; then
+  if [ ! -f "$APT_LIST" ]; then
+    echo "apt package list not found: $APT_LIST" >&2
+    exit 1
+  fi
+
+  packages=()
+  while IFS= read -r pkg || [ -n "$pkg" ]; do
+    pkg="${pkg#"${pkg%%[![:space:]]*}"}"
+    pkg="${pkg%"${pkg##*[![:space:]]}"}"
+    case "$pkg" in
+      ""|\#*|\;*) continue ;;
+    esac
+    packages+=("$pkg")
+  done < "$APT_LIST"
+
+  if [ "${#packages[@]}" -eq 0 ]; then
+    echo "apt package list is empty; skip."
+    exit 0
+  fi
+
+  run_as_root apt-get update -q
+  run_as_root apt-get install -y "${packages[@]}"
+  exit 0
+fi
+
+if command -v pacman &>/dev/null; then
+  if [ ! -f "$PACMAN_LIST" ]; then
+    echo "pacman package list not found: $PACMAN_LIST" >&2
+    exit 1
+  fi
+
+  packages=()
+  while IFS= read -r pkg || [ -n "$pkg" ]; do
+    pkg="${pkg#"${pkg%%[![:space:]]*}"}"
+    pkg="${pkg%"${pkg##*[![:space:]]}"}"
+    case "$pkg" in
+      ""|\#*|\;*) continue ;;
+    esac
+    packages+=("$pkg")
+  done < "$PACMAN_LIST"
+
+  if [ "${#packages[@]}" -eq 0 ]; then
+    echo "pacman package list is empty; skip."
+    exit 0
+  fi
+
+  run_as_root pacman -S --needed --noconfirm "${packages[@]}"
+  exit 0
+fi
+
+echo "No supported package manager found (apt-get/pacman); skip."

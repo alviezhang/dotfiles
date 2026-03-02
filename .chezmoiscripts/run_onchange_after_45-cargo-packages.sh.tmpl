@@ -1,0 +1,41 @@
+#!/bin/bash
+# cargo packages hash: {{ include "packages/cargo.list" | sha256sum }}
+set -euo pipefail
+
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
+
+CARGO_BIN=""
+if [ -x "$CARGO_HOME/bin/cargo" ]; then
+  CARGO_BIN="$CARGO_HOME/bin/cargo"
+elif command -v cargo &>/dev/null; then
+  CARGO_BIN="$(command -v cargo)"
+else
+  echo "cargo not found; skip cargo packages."
+  exit 0
+fi
+
+LIST_FILE="{{ .chezmoi.sourceDir }}/packages/cargo.list"
+if [ ! -f "$LIST_FILE" ]; then
+  echo "cargo package list not found: $LIST_FILE" >&2
+  exit 1
+fi
+
+has_any=0
+while IFS= read -r crate || [ -n "$crate" ]; do
+  crate="${crate#"${crate%%[![:space:]]*}"}"
+  crate="${crate%"${crate##*[![:space:]]}"}"
+  case "$crate" in
+    ""|\#*|\;*) continue ;;
+  esac
+  has_any=1
+  if ! "$CARGO_BIN" install --locked "$crate"; then
+    echo "cargo install --locked failed for '$crate'; retry without --locked..." >&2
+    "$CARGO_BIN" install "$crate"
+  fi
+done < "$LIST_FILE"
+
+if [ "$has_any" -eq 0 ]; then
+  echo "cargo package list is empty; skip."
+  exit 0
+fi

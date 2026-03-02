@@ -1,0 +1,5 @@
+# One crate spec per line. Blank lines / comments are ignored.
+#
+# Examples:
+#   cargo-binstall
+#   ripgrep@14.1.1

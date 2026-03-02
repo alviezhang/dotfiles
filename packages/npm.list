@@ -1,0 +1,6 @@
+# One package spec per line. Blank lines / comments are ignored.
+#
+# Examples:
+#   typescript
+#   pnpm
+#   @antfu/ni

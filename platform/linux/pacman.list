@@ -19,6 +19,5 @@ git
 github-cli
 
 # Build tools (needed for Rust, Python extensions, etc.)
-python-pipx
 age
 base-devel
