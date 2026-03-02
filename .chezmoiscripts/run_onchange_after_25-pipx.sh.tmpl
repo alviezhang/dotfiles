@@ -36,36 +36,15 @@ ensure_pipx() {
 
   "$brew_bin" install pipx || true
   {{- else if eq .chezmoi.os "linux" }}
-  local python=""
-  if command -v python3 &>/dev/null; then
-    python="$(command -v python3)"
-  elif [ -x /usr/bin/python3 ]; then
-    python=/usr/bin/python3
-  fi
-
-  if [ -z "$python" ]; then
-    echo "python3 not found; cannot install pipx." >&2
+  if command -v apt-get &>/dev/null; then
+    run_as_root apt-get update -q
+    run_as_root apt-get install -y pipx
+  elif command -v pacman &>/dev/null; then
+    run_as_root pacman -S --needed --noconfirm python-pipx
+  else
+    echo "No supported package manager found (apt-get/pacman); install pipx manually." >&2
     return 1
   fi
-
-  export PYTHONUSERBASE="${PYTHONUSERBASE:-$HOME/.local}"
-
-  if ! "$python" -m pip --version &>/dev/null; then
-    echo "pip not found; attempting to install python pip/venv via system package manager..." >&2
-    if command -v apt-get &>/dev/null; then
-      run_as_root apt-get update -q
-      run_as_root apt-get install -y python3-pip python3-venv
-    elif command -v pacman &>/dev/null; then
-      run_as_root pacman -S --needed --noconfirm python python-pip
-    else
-      echo "No supported package manager found (apt-get/pacman); install pip manually." >&2
-      return 1
-    fi
-
-    "$python" -m pip --version &>/dev/null || { echo "pip still not available for: $python" >&2; return 1; }
-  fi
-
-  "$python" -m pip install --user --upgrade pipx
   {{- end }}
 }
 
