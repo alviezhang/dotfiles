@@ -93,9 +93,17 @@ if [[ -n "$fnm_exec" ]] && [[ "${_DOTFILES_FNM_ENV_DONE-}" != "$$" ]]; then
   # Avoid PATH growth in nested shells / repeated sourcing.
   path=("${path[@]:#${XDG_STATE_HOME}/fnm_multishells/*/bin}")
   path=("${path[@]:#$FNM_DIR}")
+  if [[ -x "$FNM_DIR/fnm" ]]; then
+    path=("$FNM_DIR" "${path[@]}")
+  fi
 
-  eval "$("$fnm_exec" env --use-on-cd)"
-  _DOTFILES_FNM_ENV_DONE="$$"
+  fnm_env="$("$fnm_exec" env --use-on-cd)"
+  fnm_env_status=$?
+  if (( fnm_env_status == 0 )); then
+    eval "$fnm_env"
+    _DOTFILES_FNM_ENV_DONE="$$"
+  fi
+  unset fnm_env fnm_env_status
 fi
 unset fnm_exec
 
