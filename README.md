@@ -120,6 +120,7 @@ Machine type and OS are independent dimensions. System packages auto-detect by O
 Rust uses XDG paths by default:
 - `CARGO_HOME=$XDG_DATA_HOME/cargo`
 - `RUSTUP_HOME=$XDG_DATA_HOME/rustup`
+- Default Rust mirror is USTC. Override `RUSTUP_DIST_SERVER` and `RUSTUP_UPDATE_ROOT` if your network requires different endpoints.
 
 `.zshrc` auto-detects installed tools at runtime — manually installed tools also work.
 
