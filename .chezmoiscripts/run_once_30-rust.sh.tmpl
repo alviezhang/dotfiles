@@ -6,11 +6,31 @@ export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
 export RUSTUP_HOME="${RUSTUP_HOME:-$XDG_DATA_HOME/rustup}"
 export RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER:-https://mirrors.ustc.edu.cn/rust-static}"
 export RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT:-https://mirrors.ustc.edu.cn/rust-static/rustup}"
-command -v rustup &>/dev/null && exit 0
+LEGACY_CARGO_HOME="${HOME}/.cargo"
+LEGACY_RUSTUP_HOME="${HOME}/.rustup"
+
+has_rustup_managed_toolchain() {
+  local rustup_bin=""
+
+  if [ -d "$RUSTUP_HOME" ] && [ -x "$CARGO_HOME/bin/rustup" ] && [ -x "$CARGO_HOME/bin/cargo" ]; then
+    rustup_bin="$CARGO_HOME/bin/rustup"
+  elif [ -d "$LEGACY_RUSTUP_HOME" ] && [ -x "$LEGACY_CARGO_HOME/bin/rustup" ] && [ -x "$LEGACY_CARGO_HOME/bin/cargo" ]; then
+    rustup_bin="$LEGACY_CARGO_HOME/bin/rustup"
+  else
+    return 1
+  fi
+
+  "$rustup_bin" show active-toolchain &>/dev/null
+}
+
+if has_rustup_managed_toolchain; then
+  exit 0
+fi
+
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
   | sh -s -- -y --no-modify-path
 
-if [ ! -x "$CARGO_HOME/bin/rustup" ] && ! command -v rustup &>/dev/null; then
-  echo "rustup installer finished but rustup was not installed." >&2
+if ! has_rustup_managed_toolchain; then
+  echo "rustup installer finished but no rustup-managed toolchain was found." >&2
   exit 1
 fi

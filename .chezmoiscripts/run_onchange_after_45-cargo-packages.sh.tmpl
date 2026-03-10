@@ -4,14 +4,23 @@ set -euo pipefail
 
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
+LEGACY_CARGO_HOME="${HOME}/.cargo"
+export RUSTUP_HOME="${RUSTUP_HOME:-$XDG_DATA_HOME/rustup}"
+LEGACY_RUSTUP_HOME="${HOME}/.rustup"
 
 CARGO_BIN=""
-if [ -x "$CARGO_HOME/bin/cargo" ]; then
+RUSTUP_BIN=""
+
+if [ -d "$RUSTUP_HOME" ] && [ -x "$CARGO_HOME/bin/rustup" ] && [ -x "$CARGO_HOME/bin/cargo" ]; then
+  RUSTUP_BIN="$CARGO_HOME/bin/rustup"
   CARGO_BIN="$CARGO_HOME/bin/cargo"
-elif command -v cargo &>/dev/null; then
-  CARGO_BIN="$(command -v cargo)"
-else
-  echo "cargo not found; skip cargo packages."
+elif [ -d "$LEGACY_RUSTUP_HOME" ] && [ -x "$LEGACY_CARGO_HOME/bin/rustup" ] && [ -x "$LEGACY_CARGO_HOME/bin/cargo" ]; then
+  RUSTUP_BIN="$LEGACY_CARGO_HOME/bin/rustup"
+  CARGO_BIN="$LEGACY_CARGO_HOME/bin/cargo"
+fi
+
+if [ -z "$RUSTUP_BIN" ] || ! "$RUSTUP_BIN" show active-toolchain &>/dev/null; then
+  echo "rustup-managed cargo not found; skip cargo packages."
   exit 0
 fi
 

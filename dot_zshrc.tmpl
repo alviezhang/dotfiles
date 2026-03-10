@@ -20,9 +20,13 @@ export PIPX_MAN_DIR="${PIPX_MAN_DIR:-$XDG_DATA_HOME/man}"
 # Rust / Cargo (XDG)
 export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
 export RUSTUP_HOME="${RUSTUP_HOME:-$XDG_DATA_HOME/rustup}"
-if [[ -d "$CARGO_HOME/bin" ]]; then
+if [[ -d "$RUSTUP_HOME" && -d "$CARGO_HOME/bin" ]]; then
   if (( ${path[(ie)$CARGO_HOME/bin]} > $#path )); then
     path=("$CARGO_HOME/bin" "${path[@]}")
+  fi
+elif [[ -d "$HOME/.rustup" && -d "$HOME/.cargo/bin" ]]; then
+  if (( ${path[(ie)$HOME/.cargo/bin]} > $#path )); then
+    path=("$HOME/.cargo/bin" "${path[@]}")
   fi
 fi
 
@@ -80,7 +84,7 @@ if command -v go &>/dev/null; then
 fi
 
 # Rust mirrors (only when rustup is installed)
-if [[ -d "$RUSTUP_HOME" ]]; then
+if [[ -d "$RUSTUP_HOME" || -d "$HOME/.rustup" ]]; then
   export RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER:-https://mirrors.ustc.edu.cn/rust-static}"
   export RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT:-https://mirrors.ustc.edu.cn/rust-static/rustup}"
 fi
