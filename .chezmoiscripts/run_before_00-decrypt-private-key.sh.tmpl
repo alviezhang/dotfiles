@@ -25,8 +25,12 @@ command -v age >/dev/null 2>&1 || { echo "age not found in PATH" >&2; exit 1; }
 PASSWORD=""
 
 # 1. Env var
-if [ -n "${CHEZMOI_AGE_PASSWORD-}" ]; then
-    PASSWORD="$CHEZMOI_AGE_PASSWORD"
+if [ "${CHEZMOI_AGE_PASSWORD+set}" = "set" ]; then
+    if [ -n "$CHEZMOI_AGE_PASSWORD" ]; then
+        PASSWORD="$CHEZMOI_AGE_PASSWORD"
+    else
+        echo "warning: CHEZMOI_AGE_PASSWORD is set but empty; falling through" >&2
+    fi
 fi
 
 # 2. macOS Keychain
@@ -47,14 +51,26 @@ fi
 if [ -z "$PASSWORD" ] && [ -f "$PW_FILE" ]; then
     perms=$(stat -f "%A" "$PW_FILE" 2>/dev/null || stat -c "%a" "$PW_FILE" 2>/dev/null || echo "?")
     if [ "$perms" = "600" ]; then
-        FILE_PW=$(sed 's/[[:space:]]*$//' "$PW_FILE")
+        FILE_PW=$(sed 's/[[:space:]]*$//' "$PW_FILE" 2>/dev/null) || FILE_PW=""
         if [ -n "$FILE_PW" ]; then
             PASSWORD="$FILE_PW"
         else
-            echo "warning: ${PW_FILE} is empty; falling through" >&2
+            echo "warning: ${PW_FILE} is empty or unreadable; falling through" >&2
         fi
     else
         echo "warning: ${PW_FILE} has perms ${perms}, expected 600; refusing to read" >&2
+    fi
+fi
+
+# If still no password and old paths exist, emit a migration hint
+if [ -z "$PASSWORD" ]; then
+    if [ -f "$HOME/.config/chezmoi/password" ] || [ -f "$SOURCE_DIR/.password" ]; then
+        cat >&2 <<'WARN'
+warning: legacy password file detected ($HOME/.config/chezmoi/password
+or $SOURCE_DIR/.password). These paths are no longer read.
+Run `scripts/rotate-password` to migrate, then remove the old file.
+See README "Migrating from old password paths".
+WARN
     fi
 fi
 
