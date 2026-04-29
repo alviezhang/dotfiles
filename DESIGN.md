@@ -81,6 +81,7 @@
 - Git 用户名 / 邮箱存在 `git-identity.toml.age`，模板自动解密读取，无需 prompt
 - 其他敏感文件通过 `chezmoi add --encrypt` 加入仓库
 - **Broken state 恢复**：见 README "Recovery" 段
+- **macOS Keychain CLI 限制**：`security add-generic-password -w` 通过 argv 传密码，调用瞬间在同用户的 `ps`/argv 可见。`security` CLI 没有 stdin flag，单用户机器风险极低，已知接受
 
 ## 关键约束
 

@@ -166,6 +166,11 @@ scripts/rotate-password --file        # force file storage at default path
 scripts/rotate-password --file /custom/path
 ```
 
+> **Note**: `scripts/rotate-password` invokes `security add-generic-password -w "$PW"`
+> on macOS. The password is briefly visible via `ps`/argv during the security call —
+> macOS `security` CLI offers no stdin alternative. Acceptable for single-user
+> machines; if you need stricter handling, use `--file` to bypass the Keychain path.
+
 ### Edit encrypted files
 
 ```bash
