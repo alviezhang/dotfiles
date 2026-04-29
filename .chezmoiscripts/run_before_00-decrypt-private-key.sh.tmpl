@@ -8,6 +8,7 @@ SOURCE_DIR="{{ .chezmoi.sourceDir }}"
 PW_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/passphrase"
 
 mkdir -p "${HOME}/.config/chezmoi"
+command -v age >/dev/null 2>&1 || { echo "age not found in PATH" >&2; exit 1; }
 
 # 密码来源（按优先级）：
 #   1. CHEZMOI_AGE_PASSWORD env var (CI / ephemeral；same-user 进程可见，不作稳态)
@@ -73,6 +74,11 @@ if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
 else
     # 交互式
     chezmoi age decrypt --output "$KEY_FILE" --passphrase "$SOURCE_DIR/key.txt.age"
+fi
+
+if [ ! -s "$KEY_FILE" ]; then
+    echo "Error: $KEY_FILE is empty or missing after decryption attempt" >&2
+    exit 1
 fi
 
 chmod 600 "$KEY_FILE"
