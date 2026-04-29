@@ -69,12 +69,18 @@
 ### Secret 管理
 
 使用 **age 加密 + 密码保护**：
-- 加密后的私钥（`key.txt.age`）存在仓库中，用密码保护
-- 密码读取优先级：`$CHEZMOI_AGE_PASSWORD` > `~/.config/chezmoi/password`（推荐）> source 目录 `.password`（legacy，gitignored），配合 `expect + age` 实现非交互解密
-- 无密码文件或 `expect` 时 fallback 到手动输入密码
-- Git 用户名/邮箱存在 `git-identity.toml.age`，模板自动解密读取，无需 prompt
+
+- 加密后的私钥（`key.txt.age`）存仓库，由密码保护
+- **密码 lookup 链（优先级从高到低）**：
+  1. `$CHEZMOI_AGE_PASSWORD` env var（**仅 CI / ephemeral 推荐**；same-user 进程可见，不作稳态）
+  2. macOS Keychain（仅 Darwin；service=`dotfiles-passphrase`, account=`$USER`）
+  3. 文件 `~/.config/dotfiles/passphrase`（必须 `0600` 权限）
+  4. 交互式输入（chezmoi age decrypt 自身 prompt）
+- **Fall-through 规则**：源未找到 → 安静下一层；源空 / 访问失败 → warning + 下一层；密码错（age 解密失败）→ 报错退出（不继续 fallthrough）
+- **密码轮换**：`scripts/rotate-password`（macOS 默认写 Keychain，Linux 写 `~/.config/dotfiles/passphrase`）。key.txt.age 用新密码重新加密；其他 .age 文件用 age 公钥加密，不受密码轮换影响
+- Git 用户名 / 邮箱存在 `git-identity.toml.age`，模板自动解密读取，无需 prompt
 - 其他敏感文件通过 `chezmoi add --encrypt` 加入仓库
-- 密码轮换：`scripts/rotate-password`（只影响 key.txt.age，其他 .age 文件用公钥加密，不受影响）
+- **Broken state 恢复**：见 README "Recovery" 段
 
 ## 关键约束
 
