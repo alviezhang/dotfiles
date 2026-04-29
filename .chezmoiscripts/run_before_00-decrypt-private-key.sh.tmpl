@@ -5,21 +5,61 @@ set -euo pipefail
 
 KEY_FILE="${HOME}/.config/chezmoi/key.txt"
 SOURCE_DIR="{{ .chezmoi.sourceDir }}"
+PW_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/passphrase"
 
 mkdir -p "${HOME}/.config/chezmoi"
 
-# 密码来源：环境变量 > ~/.config/chezmoi/password > source 目录 .password > 交互式输入
+# 密码来源（按优先级）：
+#   1. CHEZMOI_AGE_PASSWORD env var (CI / ephemeral；same-user 进程可见，不作稳态)
+#   2. macOS Keychain (service=dotfiles-passphrase, account=$USER)
+#   3. ~/.config/dotfiles/passphrase (mode 0600)
+#   4. 交互式输入（chezmoi age decrypt 自身 prompt）
+#
+# Fall-through 规则：
+#   - 源未找到：安静下一层
+#   - 源找到但为空：warning + 下一层
+#   - 源访问失败（keychain 锁/拒、文件 perm 错）：warning + 下一层
+#   - 拿到密码但 age 解密失败：不 fallthrough，set -e 直接报错退出
+
 PASSWORD=""
+
+# 1. Env var
 if [ -n "${CHEZMOI_AGE_PASSWORD-}" ]; then
     PASSWORD="$CHEZMOI_AGE_PASSWORD"
-elif [ -f "$HOME/.config/chezmoi/password" ]; then
-    PASSWORD="$(sed 's/[[:space:]]*$//' "$HOME/.config/chezmoi/password")"
-elif [ -f "$SOURCE_DIR/.password" ]; then
-    PASSWORD="$(sed 's/[[:space:]]*$//' "$SOURCE_DIR/.password")"
 fi
 
+# 2. macOS Keychain
+if [ -z "$PASSWORD" ] && [ "$(uname -s)" = "Darwin" ] && command -v security &>/dev/null; then
+    KC_RC=0
+    KC_PW=$(security find-generic-password -s dotfiles-passphrase -a "$USER" -w 2>/dev/null) || KC_RC=$?
+    if [ "$KC_RC" -eq 0 ] && [ -n "$KC_PW" ]; then
+        PASSWORD="$KC_PW"
+    elif [ "$KC_RC" -eq 0 ] && [ -z "$KC_PW" ]; then
+        echo "warning: Keychain entry 'dotfiles-passphrase' is empty; falling through" >&2
+    elif [ "$KC_RC" -ne 44 ]; then
+        # rc=44 = item not found (silent); other rc = real failure (locked / access denied / etc.)
+        echo "warning: 'security find-generic-password' exited with $KC_RC; falling through" >&2
+    fi
+fi
+
+# 3. File fallback (~/.config/dotfiles/passphrase, must be 0600)
+if [ -z "$PASSWORD" ] && [ -f "$PW_FILE" ]; then
+    perms=$(stat -f "%A" "$PW_FILE" 2>/dev/null || stat -c "%a" "$PW_FILE" 2>/dev/null || echo "?")
+    if [ "$perms" = "600" ]; then
+        FILE_PW=$(sed 's/[[:space:]]*$//' "$PW_FILE")
+        if [ -n "$FILE_PW" ]; then
+            PASSWORD="$FILE_PW"
+        else
+            echo "warning: ${PW_FILE} is empty; falling through" >&2
+        fi
+    else
+        echo "warning: ${PW_FILE} has perms ${perms}, expected 600; refusing to read" >&2
+    fi
+fi
+
+# 4. Decrypt
 if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
-    # 非交互：用 expect 提供密码给 age（通过环境变量避免进程参数泄露）
+    # 非交互：通过 env var 把密码喂给 age（避免命令行参数泄漏）
     AGE_PW="$PASSWORD" AGE_KEY="$KEY_FILE" AGE_SRC="$SOURCE_DIR/key.txt.age" \
     expect -c '
         log_user 0
@@ -31,7 +71,7 @@ if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
         exit [lindex $result 3]
     '
 else
-    # 交互式输入密码
+    # 交互式
     chezmoi age decrypt --output "$KEY_FILE" --passphrase "$SOURCE_DIR/key.txt.age"
 fi
 
