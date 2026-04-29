@@ -36,19 +36,7 @@ bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   - set to `0` / `false` / `no` / `off` to disable
   - unset to follow `~/.config/chezmoi/chezmoi.toml`
 
-For no-interactive init/apply, password lookup priority is:
-
-1. `$CHEZMOI_AGE_PASSWORD`
-2. `$HOME/.config/chezmoi/password` (recommended)
-3. source dir `.password` (legacy; e.g. `~/.local/share/chezmoi/.password`)
-
-You can configure the fallback file first:
-
-```bash
-mkdir -p ~/.config/chezmoi
-echo -n "your-passphrase" > ~/.config/chezmoi/password
-chmod 600 ~/.config/chezmoi/password
-```
+For non-interactive runs, see [Secrets](#secrets) below for password setup.
 
 ## Enable Language Tools
 
@@ -143,29 +131,78 @@ chezmoi apply
 
 ## Secrets
 
-For no-interactive runs, password lookup priority is `$CHEZMOI_AGE_PASSWORD` > `$HOME/.config/chezmoi/password` > source dir `.password` (legacy). Current flow uses `expect`, no `rage` required.
+For non-interactive runs, the age passphrase that decrypts `key.txt.age`
+is looked up in this order:
 
-无密码文件时 fallback 到手动输入密码。
-如果误改了 `~/.config/chezmoi/key.txt`，执行 `chezmoi apply` 或 `chezmoi update` 会自动重新解密恢复。
+1. `$CHEZMOI_AGE_PASSWORD` env var
+   - **Use only for CI / ephemeral / one-shot scenarios.** Env vars are
+     visible to other same-user processes via `ps` /
+     `/proc/<pid>/environ` / macOS equivalents — not recommended as
+     steady-state storage.
+2. **macOS Keychain** (Darwin only): service `dotfiles-passphrase`,
+   account `$USER`.
+   - May sync across your Macs via iCloud Keychain depending on your
+     keychain configuration; not guaranteed.
+3. **File** at `~/.config/dotfiles/passphrase` (mode `0600`).
+   - Falls through with a warning if perms are not `0600`.
+4. Interactive prompt fallback.
+
+If a source returns an empty value or fails (e.g., locked Keychain),
+the script falls through with a warning. If a source returns a
+password but age decryption fails (i.e., wrong password), the script
+exits with an error rather than continuing to the next source.
+
+If you accidentally edit `~/.config/chezmoi/key.txt`, `chezmoi apply`
+or `chezmoi update` re-decrypts it on every run and self-heals.
+
+### Bootstrap & rotation
 
 ```bash
-# 编辑加密文件
+# Set / rotate password (default platform target)
+scripts/rotate-password               # macOS: Keychain   Linux: ~/.config/dotfiles/passphrase
+scripts/rotate-password --auto        # auto-generate A-Za-z0-9 (default length 32)
+scripts/rotate-password --auto --length 48
+scripts/rotate-password --file        # force file storage at default path
+scripts/rotate-password --file /custom/path
+```
+
+### Edit encrypted files
+
+```bash
 scripts/edit-secret git-identity.toml.age
+```
 
-# 轮换密码（手动输入）
+### Migrating from old password paths
+
+The old paths (`~/.config/chezmoi/password` and source-dir `.password`)
+are no longer read. To migrate:
+
+```bash
 scripts/rotate-password
+rm -f ~/.config/chezmoi/password
+rm -f "$(chezmoi source-path)/.password"   # if it exists
+```
 
-# 自动生成 A-Za-z0-9 密码（默认长度 32）
-scripts/rotate-password --auto
+### Recovery (broken state)
 
-# 写到指定文件（默认 ~/.config/chezmoi/password）
-scripts/rotate-password --auto --password-file /path/to/password
+If `~/.config/chezmoi/key.txt` is missing AND Keychain is empty / wrong
+AND the password file is gone, `scripts/rotate-password` cannot help
+(it requires the existing decrypted key). Recover manually:
 
-# 兼容旧用法：同步到目录下的 .password
-scripts/rotate-password --auto --password-dir /some/dir
+```bash
+SOURCE_DIR="$(chezmoi source-path)"
+mkdir -p ~/.config/chezmoi
+age -d "$SOURCE_DIR/key.txt.age" > ~/.config/chezmoi/key.txt   # prompts for password
+chmod 600 ~/.config/chezmoi/key.txt
 
-# 可选：也写一份到 source dir .password（gitignored）
-scripts/rotate-password --auto --write-source-password
+# macOS:
+security add-generic-password -s dotfiles-passphrase -a "$USER" -w '<password>' -U
+# Linux:
+mkdir -p ~/.config/dotfiles && chmod 700 ~/.config/dotfiles
+umask 077 && printf '%s' '<password>' > ~/.config/dotfiles/passphrase
+chmod 600 ~/.config/dotfiles/passphrase
+
+chezmoi diff   # verify
 ```
 
 See [DESIGN.md](DESIGN.md) for requirements and design decisions.
