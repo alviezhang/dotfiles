@@ -10,6 +10,7 @@ brew "gnupg"
 brew "python"
 brew "gh"
 brew "age"
+brew "zoxide"
 
 # Casks
 cask "alfred"

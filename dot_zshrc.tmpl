@@ -95,6 +95,11 @@ if command -v fnm &>/dev/null; then
   eval "$(fnm env --use-on-cd)"
 fi
 
+# zoxide (smarter cd)
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
 # Ensure ~/.local/bin is on PATH (avoid duplicates if already added elsewhere).
 if (( ${path[(ie)$HOME/.local/bin]} > $#path )); then
   path=("$HOME/.local/bin" "${path[@]}")

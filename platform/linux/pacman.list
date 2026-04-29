@@ -20,4 +20,5 @@ github-cli
 
 # Build tools (needed for Rust, Python extensions, etc.)
 age
+zoxide
 base-devel
