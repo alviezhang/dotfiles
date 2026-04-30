@@ -1,2 +1,3 @@
 #!/bin/bash
-exec "$(dirname "$0")/dotfiles-keychain.app/Contents/MacOS/dotfiles-keychain" "$@"
+SELF_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+exec "$SELF_DIR/dotfiles-keychain.app/Contents/MacOS/dotfiles-keychain" "$@"

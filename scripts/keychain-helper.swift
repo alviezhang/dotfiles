@@ -23,11 +23,12 @@ struct KeychainHelper {
         switch cmd {
         case "get":    get(service: service, account: account)
         case "set":
-            guard args.count >= 5 else {
-                fputs("Usage: dotfiles-keychain set <service> <account> <password>\n", stderr)
+            // Read password from stdin to avoid argv exposure via ps/sysctl
+            guard let password = readLine(strippingNewline: true), !password.isEmpty else {
+                fputs("error: password must be provided on stdin\n", stderr)
                 exit(1)
             }
-            set(service: service, account: account, password: args[4])
+            set(service: service, account: account, password: password)
         case "delete": delete(service: service, account: account)
         default:
             fputs("Unknown command: \(cmd)\n", stderr)
@@ -57,11 +58,12 @@ struct KeychainHelper {
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         if status == errSecItemNotFound { exit(44) }
-        guard status == errSecSuccess,
-              let data = item as? Data,
-              let pw = String(data: data, encoding: .utf8)
-        else {
+        guard status == errSecSuccess else {
             fputs("error: SecItemCopyMatching status \(status)\n", stderr)
+            exit(1)
+        }
+        guard let data = item as? Data, let pw = String(data: data, encoding: .utf8) else {
+            fputs("error: Keychain data is missing or not valid UTF-8\n", stderr)
             exit(1)
         }
         print(pw, terminator: "")
