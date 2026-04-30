@@ -23,12 +23,14 @@ command -v age >/dev/null 2>&1 || { echo "age not found in PATH" >&2; exit 1; }
 #   - 拿到密码但 age 解密失败：不 fallthrough，set -e 直接报错退出
 
 PASSWORD=""
+PW_SOURCE=""        # human-readable source label, used in error messages
 KEYCHAIN_BIN="${SOURCE_DIR}/scripts/dotfiles-keychain"
 
 # 1. Env var
 if [ "${CHEZMOI_AGE_PASSWORD+set}" = "set" ]; then
     if [ -n "$CHEZMOI_AGE_PASSWORD" ]; then
         PASSWORD="$CHEZMOI_AGE_PASSWORD"
+        PW_SOURCE="env CHEZMOI_AGE_PASSWORD"
     else
         echo "warning: CHEZMOI_AGE_PASSWORD is set but empty; falling through" >&2
     fi
@@ -46,6 +48,7 @@ if [ -z "$PASSWORD" ] && [ "$(uname -s)" = "Darwin" ]; then
     fi
     if [ "$KC_RC" -eq 0 ] && [ -n "$KC_PW" ]; then
         PASSWORD="$KC_PW"
+        PW_SOURCE="macOS Keychain (service=dotfiles-passphrase, account=$USER)"
     elif [ "$KC_RC" -eq 0 ] && [ -z "$KC_PW" ]; then
         echo "warning: Keychain entry 'dotfiles-passphrase' is empty; falling through" >&2
     elif [ "$KC_RC" -ne 44 ]; then
@@ -60,6 +63,7 @@ if [ -z "$PASSWORD" ] && [ -f "$PW_FILE" ]; then
         FILE_PW=$(sed 's/[[:space:]]*$//' "$PW_FILE" 2>/dev/null) || FILE_PW=""
         if [ -n "$FILE_PW" ]; then
             PASSWORD="$FILE_PW"
+            PW_SOURCE="file $PW_FILE"
         else
             echo "warning: ${PW_FILE} is empty or unreadable; falling through" >&2
         fi
@@ -83,6 +87,7 @@ fi
 # 4. Decrypt
 if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
     # 非交互：通过 env var 把密码喂给 age（避免命令行参数泄漏）
+    set +e
     AGE_PW="$PASSWORD" AGE_KEY="$KEY_FILE" AGE_SRC="$SOURCE_DIR/key.txt.age" \
     expect -c '
         log_user 0
@@ -93,13 +98,46 @@ if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
         catch wait result
         exit [lindex $result 3]
     '
+    age_rc=$?
+    set -e
+    if [ "$age_rc" -ne 0 ]; then
+        rm -f "$KEY_FILE"   # remove possibly partial / corrupt output
+        cat >&2 <<EOF
+Error: age failed to decrypt key.txt.age (exit $age_rc).
+  Source file:     $SOURCE_DIR/key.txt.age
+  Password from:   $PW_SOURCE
+
+Most likely cause: the stored passphrase doesn't match key.txt.age.
+
+Common scenarios:
+  1. You rotated the passphrase on another machine but didn't commit/push
+     key.txt.age — this machine still has the old encrypted file but the
+     new passphrase (or vice versa).
+       Fix on the rotating machine:
+         chezmoi cd && git add key.txt.age && git commit -m "rotate passphrase" && git push
+       Then on this machine:
+         chezmoi update
+
+  2. The keychain / passphrase file holds a stale value from before rotation.
+       Fix:
+         scripts/rotate-password   # if you have the current decrypted key.txt
+       Or update the source manually (Keychain entry, or $PW_FILE).
+EOF
+        exit 1
+    fi
 else
     # 交互式
-    chezmoi age decrypt --output "$KEY_FILE" --passphrase "$SOURCE_DIR/key.txt.age"
+    if ! chezmoi age decrypt --output "$KEY_FILE" --passphrase "$SOURCE_DIR/key.txt.age"; then
+        rm -f "$KEY_FILE"
+        echo "Error: interactive age decryption failed (no password source available, or wrong passphrase entered)." >&2
+        echo "  See README 'Secrets' for how to set CHEZMOI_AGE_PASSWORD / Keychain / $PW_FILE." >&2
+        exit 1
+    fi
 fi
 
 if [ ! -s "$KEY_FILE" ]; then
-    echo "Error: $KEY_FILE is empty or missing after decryption attempt" >&2
+    echo "Error: $KEY_FILE is empty or missing after decryption — age reported success but produced no output." >&2
+    echo "  This shouldn't normally happen; check disk space and permissions on $(dirname "$KEY_FILE")." >&2
     exit 1
 fi
 
