@@ -72,8 +72,9 @@ if [ -z "$PASSWORD" ] && [ -f "$PW_FILE" ]; then
     fi
 fi
 
-# Verbose: log which source supplied the passphrase (chezmoi apply -v / --verbose)
-case " ${CHEZMOI_ARGS:-} ${CHEZMOI_VERBOSE:-} " in
+# Verbose: log which source supplied the passphrase
+# Triggers: `chezmoi apply -v` / `--verbose`, or `DOTFILES_DECRYPT_VERBOSE=1`
+case " ${CHEZMOI_ARGS:-} ${CHEZMOI_VERBOSE:-} ${DOTFILES_DECRYPT_VERBOSE:-} " in
     *" -v"*|*" --verbose"*|*" 1 "*|*" true "*)
         [ -n "$PW_SOURCE" ] && echo "decrypt: passphrase from $PW_SOURCE" >&2 ;;
 esac
