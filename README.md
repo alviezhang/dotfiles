@@ -1,6 +1,14 @@
 # dotfiles
 
-Managed by [Chezmoi](https://www.chezmoi.io/). Supports macOS and Linux (Arch/Ubuntu/Debian).
+My [Chezmoi](https://www.chezmoi.io/)-managed dotfiles for macOS and Linux. The repo keeps the base shell/editor setup portable, stores private material as age-encrypted files, and lets each machine opt into only the toolchains it needs.
+
+## Highlights
+
+- **One-command bootstrap** for a clean macOS or Linux account.
+- **`personal` / `work` / `remote` profiles** with shared defaults and profile-specific tmux behavior.
+- **age-encrypted secrets**: only ciphertext (`key.txt.age`, `git-identity.toml.age`) lives in the repo, and the decrypted key is rebuilt on each apply/update.
+- **macOS Keychain support** for non-interactive updates, with **iCloud Keychain sync** between Macs using the same Apple ID. The bundled helper reads the passphrase from stdin (no argv leak); file and env-var fallbacks cover Linux and CI.
+- **Opt-in language tools**: Go, Rust, Node.js, and pipx can be enabled per machine via TOML or env vars.
 
 ## Install
 
@@ -108,7 +116,6 @@ Machine type and OS are independent dimensions. System packages auto-detect by O
 Rust uses XDG paths by default:
 - `CARGO_HOME=$XDG_DATA_HOME/cargo`
 - `RUSTUP_HOME=$XDG_DATA_HOME/rustup`
-- Legacy rustup installs under `~/.cargo/bin` and `~/.rustup` are also detected for PATH setup and cargo package management.
 - Default Rust mirror is USTC. Override `RUSTUP_DIST_SERVER` and `RUSTUP_UPDATE_ROOT` if your network requires different endpoints.
 
 `.zshrc` auto-detects installed tools at runtime — manually installed tools also work.
@@ -140,9 +147,9 @@ is looked up in this order:
      `/proc/<pid>/environ` / macOS equivalents — not recommended as
      steady-state storage.
 2. **macOS Keychain** (Darwin only): service `dotfiles-passphrase`,
-   account `$USER`.
-   - May sync across your Macs via iCloud Keychain depending on your
-     keychain configuration; not guaranteed.
+   account `$USER`. `scripts/rotate-password` writes through the bundled
+   [`dotfiles-keychain`](#bundled-keychain-helper) helper; bootstrap reads
+   through the helper, or through `security` if the helper is unavailable.
 3. **File** at `~/.config/dotfiles/passphrase` (mode `0600`).
    - Falls through with a warning if perms are not `0600`.
 4. Interactive prompt fallback.
@@ -166,26 +173,33 @@ scripts/rotate-password --file        # force file storage at default path
 scripts/rotate-password --file /custom/path
 ```
 
-> **Note**: `scripts/rotate-password` invokes `security add-generic-password -w "$PW"`
-> on macOS. The password is briefly visible via `ps`/argv during the security call —
-> macOS `security` CLI offers no stdin alternative. Acceptable for single-user
-> machines; if you need stricter handling, use `--file` to bypass the Keychain path.
+> On macOS, `scripts/rotate-password` writes via the bundled
+> `dotfiles-keychain` helper, which takes the password on **stdin** —
+> the new passphrase never appears in `ps` / argv. Use `--file` if
+> you'd rather store the password as a `0600` file on disk and skip
+> the Keychain entirely.
+
+### Bundled Keychain helper
+
+`scripts/dotfiles-keychain` is a small Developer ID–signed Swift CLI
+that the rotation script writes through, taking the passphrase on
+**stdin** (no `ps` / argv leak). Source: `scripts/keychain-helper.swift`;
+build configuration in `scripts/kc-config.swift`.
+
+The passphrase is stored as a synchronizable Keychain item, so it
+propagates between Macs sharing the same Apple ID with iCloud Keychain
+enabled. Sync is best-effort and asynchronous: minutes, sometimes
+longer. Until sync lands on a fresh Mac, use the file / env-var fallback
+if you need immediate bootstrap.
+
+If you'd rather skip Keychain entirely, use `scripts/rotate-password --file`
+and sync `~/.config/dotfiles/passphrase` via 1Password / Bitwarden /
+Syncthing / `scp`.
 
 ### Edit encrypted files
 
 ```bash
 scripts/edit-secret git-identity.toml.age
-```
-
-### Migrating from old password paths
-
-The old paths (`~/.config/chezmoi/password` and source-dir `.password`)
-are no longer read. To migrate:
-
-```bash
-scripts/rotate-password
-rm -f ~/.config/chezmoi/password
-rm -f "$(chezmoi source-path)/.password"   # if it exists
 ```
 
 ### Recovery (broken state)
@@ -200,14 +214,20 @@ mkdir -p ~/.config/chezmoi
 age -d "$SOURCE_DIR/key.txt.age" > ~/.config/chezmoi/key.txt   # prompts for password
 chmod 600 ~/.config/chezmoi/key.txt
 
-# macOS:
-security add-generic-password -s dotfiles-passphrase -a "$USER" -w '<password>' -U
-# Linux:
-mkdir -p ~/.config/dotfiles && chmod 700 ~/.config/dotfiles
-umask 077 && printf '%s' '<password>' > ~/.config/dotfiles/passphrase
-chmod 600 ~/.config/dotfiles/passphrase
+printf "Age passphrase: "
+read -rs PW
+echo
+
+# Store in the default platform location:
+if [ "$(uname -s)" = "Darwin" ]; then
+    printf '%s' "$PW" | "$SOURCE_DIR/scripts/dotfiles-keychain" \
+        set dotfiles-passphrase "$USER"
+else
+    mkdir -p ~/.config/dotfiles && chmod 700 ~/.config/dotfiles
+    umask 077 && printf '%s' "$PW" > ~/.config/dotfiles/passphrase
+    chmod 600 ~/.config/dotfiles/passphrase
+fi
+unset PW
 
 chezmoi diff   # verify
 ```
-
-See [DESIGN.md](DESIGN.md) for requirements and design decisions.

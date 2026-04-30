@@ -12,7 +12,7 @@ command -v age >/dev/null 2>&1 || { echo "age not found in PATH" >&2; exit 1; }
 
 # 密码来源（按优先级）：
 #   1. CHEZMOI_AGE_PASSWORD env var (CI / ephemeral；same-user 进程可见，不作稳态)
-#   2. macOS Keychain (iCloud-synced via dotfiles-keychain helper; falls back to security CLI)
+#   2. macOS Keychain (sync enabled via dotfiles-keychain helper; falls back to security CLI)
 #   3. ~/.config/dotfiles/passphrase (mode 0600)
 #   4. 交互式输入（chezmoi age decrypt 自身 prompt）
 #
@@ -36,7 +36,7 @@ if [ "${CHEZMOI_AGE_PASSWORD+set}" = "set" ]; then
     fi
 fi
 
-# 2. macOS Keychain (iCloud-synced via pre-built Developer ID .app bundle in repo)
+# 2. macOS Keychain (sync enabled via pre-built Developer ID .app bundle in repo)
 if [ -z "$PASSWORD" ] && [ "$(uname -s)" = "Darwin" ]; then
     KC_RC=0 KC_PW=""
     if [ -x "$KEYCHAIN_BIN" ]; then
@@ -69,18 +69,6 @@ if [ -z "$PASSWORD" ] && [ -f "$PW_FILE" ]; then
         fi
     else
         echo "warning: ${PW_FILE} has perms ${perms}, expected 600; refusing to read" >&2
-    fi
-fi
-
-# If still no password and old paths exist, emit a migration hint
-if [ -z "$PASSWORD" ]; then
-    if [ -f "$HOME/.config/chezmoi/password" ] || [ -f "$SOURCE_DIR/.password" ]; then
-        cat >&2 <<'WARN'
-warning: legacy password file detected ($HOME/.config/chezmoi/password
-or $SOURCE_DIR/.password). These paths are no longer read.
-Run `scripts/rotate-password` to migrate, then remove the old file.
-See README "Migrating from old password paths".
-WARN
     fi
 fi
 

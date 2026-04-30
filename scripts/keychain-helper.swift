@@ -2,10 +2,10 @@ import Foundation
 import Security
 
 // keychainAccessGroup is defined in kc-config.swift, injected at compile time:
-//   let keychainAccessGroup: String? = "TEAMID.me.alvie.dotfiles"  (sync enabled)
-//   let keychainAccessGroup: String? = nil                          (no sync)
+//   let keychainAccessGroup: String? = "TEAMID.bundle.id"  (sync enabled)
 
-// dotfiles-keychain <get|set|delete> <service> <account> [password]
+// dotfiles-keychain <get|set|delete> <service> <account>
+// The set command reads the password from stdin.
 // Exit: 0 = ok, 44 = not found (matches security(1)), 1 = error
 
 @main
@@ -13,7 +13,7 @@ struct KeychainHelper {
     static func main() {
         let args = CommandLine.arguments
         guard args.count >= 4 else {
-            fputs("Usage: dotfiles-keychain <get|set|delete> <service> <account> [password]\n", stderr)
+            fputs("Usage: dotfiles-keychain <get|set|delete> <service> <account>\n", stderr)
             exit(1)
         }
         let cmd     = args[1]
