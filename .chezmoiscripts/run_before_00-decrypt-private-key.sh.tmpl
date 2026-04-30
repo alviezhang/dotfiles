@@ -12,7 +12,7 @@ command -v age >/dev/null 2>&1 || { echo "age not found in PATH" >&2; exit 1; }
 
 # 密码来源（按优先级）：
 #   1. CHEZMOI_AGE_PASSWORD env var (CI / ephemeral；same-user 进程可见，不作稳态)
-#   2. macOS Keychain (service=dotfiles-passphrase, account=$USER)
+#   2. macOS Keychain (iCloud-synced via dotfiles-keychain helper; falls back to security CLI)
 #   3. ~/.config/dotfiles/passphrase (mode 0600)
 #   4. 交互式输入（chezmoi age decrypt 自身 prompt）
 #
@@ -23,6 +23,7 @@ command -v age >/dev/null 2>&1 || { echo "age not found in PATH" >&2; exit 1; }
 #   - 拿到密码但 age 解密失败：不 fallthrough，set -e 直接报错退出
 
 PASSWORD=""
+KEYCHAIN_BIN="${SOURCE_DIR}/scripts/dotfiles-keychain"
 
 # 1. Env var
 if [ "${CHEZMOI_AGE_PASSWORD+set}" = "set" ]; then
@@ -33,17 +34,22 @@ if [ "${CHEZMOI_AGE_PASSWORD+set}" = "set" ]; then
     fi
 fi
 
-# 2. macOS Keychain
-if [ -z "$PASSWORD" ] && [ "$(uname -s)" = "Darwin" ] && command -v security &>/dev/null; then
-    KC_RC=0
-    KC_PW=$(security find-generic-password -s dotfiles-passphrase -a "$USER" -w 2>/dev/null) || KC_RC=$?
+# 2. macOS Keychain (iCloud-synced via pre-built Developer ID .app bundle in repo)
+if [ -z "$PASSWORD" ] && [ "$(uname -s)" = "Darwin" ]; then
+    KC_RC=0 KC_PW=""
+    if [ -x "$KEYCHAIN_BIN" ]; then
+        KC_PW=$("$KEYCHAIN_BIN" get dotfiles-passphrase "$USER" 2>/dev/null) || KC_RC=$?
+    elif command -v security &>/dev/null; then
+        KC_PW=$(security find-generic-password -s dotfiles-passphrase -a "$USER" -w 2>/dev/null) || KC_RC=$?
+    else
+        KC_RC=44
+    fi
     if [ "$KC_RC" -eq 0 ] && [ -n "$KC_PW" ]; then
         PASSWORD="$KC_PW"
     elif [ "$KC_RC" -eq 0 ] && [ -z "$KC_PW" ]; then
         echo "warning: Keychain entry 'dotfiles-passphrase' is empty; falling through" >&2
     elif [ "$KC_RC" -ne 44 ]; then
-        # rc=44 = item not found (silent); other rc = real failure (locked / access denied / etc.)
-        echo "warning: 'security find-generic-password' exited with $KC_RC; falling through" >&2
+        echo "warning: Keychain lookup exited with $KC_RC; falling through" >&2
     fi
 fi
 

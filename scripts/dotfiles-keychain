@@ -1,0 +1,2 @@
+#!/bin/bash
+exec "$(dirname "$0")/dotfiles-keychain.app/Contents/MacOS/dotfiles-keychain" "$@"
