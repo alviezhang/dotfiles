@@ -72,6 +72,12 @@ if [ -z "$PASSWORD" ] && [ -f "$PW_FILE" ]; then
     fi
 fi
 
+# Verbose: log which source supplied the passphrase (chezmoi apply -v / --verbose)
+case " ${CHEZMOI_ARGS:-} ${CHEZMOI_VERBOSE:-} " in
+    *" -v"*|*" --verbose"*|*" 1 "*|*" true "*)
+        [ -n "$PW_SOURCE" ] && echo "decrypt: passphrase from $PW_SOURCE" >&2 ;;
+esac
+
 # 4. Decrypt
 if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
     # 非交互：通过 env var 把密码喂给 age（避免命令行参数泄漏）
