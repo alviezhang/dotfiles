@@ -5,6 +5,12 @@ ZSH_THEME="bira"
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
+{{- if eq .chezmoi.os "linux" }}
+# 未生成 en_US.UTF-8 的系统（包脚本不支持的发行版，或尚未 apply）退回 glibc 内置的 C.UTF-8
+if ! locale -a 2>/dev/null | grep -qiE '^en_US\.utf-?8$'; then
+  export LANG=C.UTF-8 LC_ALL=C.UTF-8
+fi
+{{- end }}
 
 # XDG Base Directory Specification
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"

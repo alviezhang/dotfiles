@@ -6,10 +6,8 @@ brew "ripgrep"
 brew "htop"
 brew "tmux"
 brew "mtr"
-brew "gnupg"
 brew "python"
 brew "gh"
-brew "age"
 brew "zoxide"
 
 # Casks

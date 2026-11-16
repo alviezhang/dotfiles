@@ -69,7 +69,7 @@ Later steps depend on earlier ones (for example oh-my-zsh needs `git`), so a fai
 
 vim plugins are installed only when `chezmoi apply` runs in a terminal; otherwise apply prints a reminder to run `:PlugInstall`.
 
-On Linux, only packages that are not yet installed are passed to apt/pacman, so a host that already has them does not need `sudo`.
+On Linux, only packages that are not yet installed are passed to apt/pacman, and `en_US.UTF-8` is generated only if it is missing, so an already provisioned host does not need `sudo`. On distributions without apt or pacman the package step prints a warning and the rest of bootstrap continues; install the tools from `platform/linux/*.list` yourself. `.zshrc` falls back to `C.UTF-8` wherever `en_US.UTF-8` has not been generated.
 
 ## Enable Language Tools
 

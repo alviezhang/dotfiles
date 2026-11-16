@@ -3,6 +3,7 @@ htop
 tmux
 zsh
 vim
+locales
 
 # File and text utilities
 tree
@@ -14,15 +15,12 @@ unzip
 zoxide
 
 # Networking utilities
-mtr
+mtr-tiny
 openssh-client
 
 # Developer tools
 git
 gh
-
-# Secrets: chezmoi has age built in; the age CLI is kept for manual troubleshooting
-age
 
 # Build tools (needed for Rust, Python extensions, etc.)
 build-essential

@@ -2,35 +2,65 @@
 #!/bin/bash
 # apt.list hash: {{ include "platform/linux/apt.list" | sha256sum }}
 # pacman.list hash: {{ include "platform/linux/pacman.list" | sha256sum }}
-# 只安装缺失的包；全部已装时不需要 root，包已齐全的服务器上无 sudo 也能通过
+# 只安装缺失的包、只在缺 en_US.UTF-8 时生成；都已就绪时不需要 root，
+# 包已齐全的服务器上无 sudo 也能通过
 set -euo pipefail
 {{ template "lib.sh" . }}
 
 LIST_DIR="{{ .chezmoi.sourceDir }}/platform/linux"
 
-if command -v apt-get >/dev/null 2>&1; then
+install_apt() {
+  local items p
+  local -a packages missing=()
   items=$(list_items "$LIST_DIR/apt.list")
   mapfile -t packages <<< "$items"
-  missing=()
   for p in "${packages[@]}"; do
     [ -n "$p" ] || continue
     dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'ok installed' || missing+=("$p")
   done
-  [ "${#missing[@]}" -eq 0 ] && { echo "apt: all packages installed"; exit 0; }
+  [ "${#missing[@]}" -eq 0 ] && { echo "apt: all packages installed"; return 0; }
   echo "apt: installing ${missing[*]}"
   run_as_root env DEBIAN_FRONTEND=noninteractive apt-get update -q
   run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
-elif command -v pacman >/dev/null 2>&1; then
+}
+
+install_pacman() {
+  local items
+  local -a packages missing=()
   items=$(list_items "$LIST_DIR/pacman.list")
   mapfile -t packages <<< "$items"
-  missing=()
   [ -n "$items" ] && mapfile -t missing < <(pacman -T "${packages[@]}" || true)
-  [ "${#missing[@]}" -eq 0 ] && { echo "pacman: all packages installed"; exit 0; }
+  [ "${#missing[@]}" -eq 0 ] && { echo "pacman: all packages installed"; return 0; }
   echo "pacman: installing ${missing[*]}"
-  # 只在确有缺包时运行；Arch 不支持部分升级，安装前同步数据库并升级系统，避免旧数据库导致 404
+  # Arch 不支持部分升级，安装前同步数据库并升级系统，避免旧数据库导致 404
   run_as_root pacman -Syu --needed --noconfirm "${missing[@]}"
+}
+
+# .zshrc 设置 LC_ALL=en_US.UTF-8；Debian/Ubuntu/Arch 默认不生成它，缺时每个 shell 都会告警
+ensure_locale() {
+  locale -a 2>/dev/null | grep -qiE '^en_US\.utf-?8$' && return 0
+  echo "locale: generating en_US.UTF-8"
+  if [ -f /etc/locale.gen ] && command -v locale-gen >/dev/null 2>&1; then
+    if grep -qE '^#[[:space:]]*en_US\.UTF-8 UTF-8' /etc/locale.gen; then
+      run_as_root sed -E -i.bak 's/^#[[:space:]]*(en_US\.UTF-8 UTF-8)/\1/' /etc/locale.gen
+      run_as_root rm -f /etc/locale.gen.bak
+    elif ! grep -qE '^en_US\.UTF-8 UTF-8' /etc/locale.gen; then
+      echo 'en_US.UTF-8 UTF-8' | run_as_root tee -a /etc/locale.gen >/dev/null
+    fi
+    run_as_root locale-gen
+  else
+    run_as_root localedef -i en_US -c -f UTF-8 en_US.UTF-8
+  fi
+}
+
+if command -v apt-get >/dev/null 2>&1; then
+  install_apt
+elif command -v pacman >/dev/null 2>&1; then
+  install_pacman
 else
-  echo "error: no supported package manager (apt-get/pacman); install platform/linux/*.list manually" >&2
-  exit 1
+  # 不支持的发行版重试也不会好，不能挡住后面的安装步骤；.zshrc 会退回 C.UTF-8
+  echo "warning: no apt-get or pacman; install the tools in platform/linux/*.list manually" >&2
+  exit 0
 fi
+ensure_locale
 {{ end -}}
