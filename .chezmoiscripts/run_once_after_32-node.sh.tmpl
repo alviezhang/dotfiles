@@ -17,6 +17,11 @@ fi
 command -v fnm >/dev/null 2>&1 || { echo "error: fnm installer finished but fnm is not on PATH" >&2; exit 1; }
 
 eval "$(fnm env)"
+# 已有默认版本就不动：脚本内容变化会让它重跑，不能借机把默认 Node 换成更新的 LTS
+if fnm list 2>/dev/null | grep -q 'default'; then
+  echo "fnm: default Node already set; skip"
+  exit 0
+fi
 fnm install --lts
 fnm default lts-latest
 {{ end -}}
