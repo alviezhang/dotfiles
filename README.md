@@ -4,13 +4,21 @@ My [Chezmoi](https://www.chezmoi.io/)-managed dotfiles for macOS and Linux. The 
 
 ## Highlights
 
-- **One-command bootstrap** for a clean macOS or Linux account. The only prerequisite is `curl`; decryption uses chezmoi's built-in age, so no `age` or `expect` binary is needed.
+- **One-command bootstrap** for a clean macOS or Linux account. The only prerequisite is `curl`, plus the Command Line Tools on macOS; decryption uses chezmoi's built-in age, so no `age` or `expect` binary is needed.
 - **`personal` / `work` / `remote` profiles** with shared defaults and profile-specific tmux behavior.
 - **age-encrypted secrets**: only ciphertext (`key.txt.age`, `git-identity.toml.age`) lives in the repo. Every apply checks the decrypted key against `age-recipient.txt` and rebuilds it only when it is missing or wrong.
 - **macOS Keychain support** with **iCloud Keychain sync** between Macs using the same Apple ID. The bundled helper reads the passphrase from stdin (no argv leak); file and env-var fallbacks cover Linux and CI.
 - **Opt-in language tools**: Go, Rust, Node.js, and pipx can be enabled per machine via TOML or env vars.
 
 ## Install
+
+On macOS, install the Command Line Tools first. chezmoi clones with the system `git`, and until the Command Line Tools are installed `/usr/bin/git` is only a stub that opens their installer:
+
+```bash
+xcode-select --install
+```
+
+On Linux only `curl` is needed: without a `git` binary chezmoi clones with its built-in git, and `git` is then installed with the system packages.
 
 ```bash
 # Personal
@@ -26,7 +34,7 @@ sh -c "$(curl --proto '=https' --tlsv1.2 -fsLS https://get.chezmoi.io)" -- -b "$
   init --apply alviezhang --promptString machineType=remote
 ```
 
-On a fresh Mac, run this from an administrator account: the Homebrew installer asks for your password and installs the Command Line Tools.
+On a fresh Mac, run this from an administrator account: the Homebrew installer asks for your password.
 
 You can also configure machine type and language tools via environment variables:
 

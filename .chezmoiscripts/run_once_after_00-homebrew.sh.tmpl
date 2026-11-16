@@ -1,6 +1,6 @@
 {{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
-# 安装 Homebrew 本体；它会顺带装好 Command Line Tools，后续脚本依赖其中的 git
+# 安装 Homebrew 本体。Command Line Tools 是前置条件（README），git 来自那里
 set -euo pipefail
 {{ template "lib.sh" . }}
 

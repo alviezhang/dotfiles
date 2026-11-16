@@ -60,7 +60,7 @@ On first `chezmoi init`, you'll be prompted for the **machine type** (personal /
 
 ## Design Principles
 
-- **Bootstrap depends only on chezmoi and curl**: decryption and template `decrypt` use chezmoi's built-in age.
+- **Bootstrap depends only on chezmoi and curl**, plus the Command Line Tools on macOS (a stated prerequisite that provides `git`). Decryption and template `decrypt` use chezmoi's built-in age.
 - **Dotfiles land before any installer runs**: installers are after-scripts, so a failed install never blocks config. Failures exit non-zero and chezmoi reruns them on the next apply.
 - **Idempotent**: scripts run safely multiple times. Package lists re-run on content change via `run_onchange_` + content hash; every-run checks (`run_after_`) exit immediately when already satisfied.
 - **No sudo for user-space tooling**: language toolchains (Rust, Node, pipx) install to `$XDG_DATA_HOME` / `~/.local`; only system package managers (brew/apt/pacman) need elevation, and Linux only asks for it when a package is actually missing.

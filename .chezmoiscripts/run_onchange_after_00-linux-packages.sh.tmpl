@@ -27,7 +27,8 @@ elif command -v pacman >/dev/null 2>&1; then
   [ -n "$items" ] && mapfile -t missing < <(pacman -T "${packages[@]}" || true)
   [ "${#missing[@]}" -eq 0 ] && { echo "pacman: all packages installed"; exit 0; }
   echo "pacman: installing ${missing[*]}"
-  run_as_root pacman -S --needed --noconfirm "${missing[@]}"
+  # 只在确有缺包时运行；Arch 不支持部分升级，安装前同步数据库并升级系统，避免旧数据库导致 404
+  run_as_root pacman -Syu --needed --noconfirm "${missing[@]}"
 else
   echo "error: no supported package manager (apt-get/pacman); install platform/linux/*.list manually" >&2
   exit 1

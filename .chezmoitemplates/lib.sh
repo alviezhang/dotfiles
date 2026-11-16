@@ -16,8 +16,8 @@ path_prepend() {
   esac
 }
 
-# 依次前插，越靠后优先级越高，与 .zshrc 一致：~/.local/bin > cargo > fnm > Homebrew
-for _dir in /usr/local/bin /opt/homebrew/bin "$FNM_DIR" "$HOME/.cargo/bin" "$CARGO_HOME/bin" "$HOME/.local/bin"; do
+# 依次前插，越靠后优先级越高，与 .zshrc 的实际结果一致：~/.local/bin > fnm > Homebrew > cargo
+for _dir in "$HOME/.cargo/bin" "$CARGO_HOME/bin" /usr/local/bin /opt/homebrew/bin "$FNM_DIR" "$HOME/.local/bin"; do
   path_prepend "$_dir"
 done
 unset _dir

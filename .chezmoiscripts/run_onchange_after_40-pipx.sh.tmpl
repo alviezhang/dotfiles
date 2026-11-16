@@ -17,7 +17,7 @@ if ! command -v pipx >/dev/null 2>&1; then
     run_as_root env DEBIAN_FRONTEND=noninteractive apt-get update -q
     run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y pipx
   elif command -v pacman >/dev/null 2>&1; then
-    run_as_root pacman -S --needed --noconfirm python-pipx
+    run_as_root pacman -Syu --needed --noconfirm python-pipx
   else
     echo "error: no supported package manager (apt-get/pacman); install pipx manually" >&2
     exit 1

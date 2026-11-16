@@ -13,7 +13,7 @@ unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME CHEZMOI_AGE_PA
 export HOME="$T/home"; mkdir -p "$HOME"
 
 SRC="$T/src"
-rsync -a --exclude .git --exclude tmux --exclude .tmux --exclude .DS_Store --exclude tests "$REPO/" "$SRC/"
+rsync -a --exclude .git --exclude /tmux --exclude /.tmux --exclude .DS_Store --exclude tests "$REPO/" "$SRC/"
 "$CHEZMOI" age-keygen --output "$T/id.txt" >/dev/null 2>&1
 REC=$("$CHEZMOI" age-keygen -y "$T/id.txt")
 echo "$REC" > "$SRC/age-recipient.txt"

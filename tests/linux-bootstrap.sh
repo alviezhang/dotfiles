@@ -33,7 +33,7 @@ sh -c "$(curl --proto '=https' --tlsv1.2 -fsLS https://get.chezmoi.io)" -- -b "$
 CZ="$HOME/.local/bin/chezmoi"
 
 SRC="$HOME/src"; mkdir -p "$SRC"
-rsync -a --exclude .git --exclude tmux --exclude .tmux --exclude .DS_Store /repo/ "$SRC/"
+rsync -a --exclude .git --exclude /tmux --exclude /.tmux --exclude .DS_Store /repo/ "$SRC/"
 FIX="$(mktemp -d)"
 "$CZ" age-keygen --output "$FIX/id.txt" >/dev/null 2>&1
 REC=$("$CZ" age-keygen -y "$FIX/id.txt"); echo "$REC" > "$SRC/age-recipient.txt"
