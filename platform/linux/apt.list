@@ -3,7 +3,6 @@ htop
 tmux
 zsh
 vim
-locales
 
 # File and text utilities
 tree

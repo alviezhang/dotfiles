@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 {{- if eq .chezmoi.os "linux" }}
-# 未生成 en_US.UTF-8 的系统（包脚本不支持的发行版，或尚未 apply）退回 glibc 内置的 C.UTF-8
+# 没有生成 en_US.UTF-8 的 Linux 直接用 glibc 内置的 C.UTF-8，不去生成 locale
 if ! locale -a 2>/dev/null | grep -qiE '^en_US\.utf-?8$'; then
   export LANG=C.UTF-8 LC_ALL=C.UTF-8
 fi

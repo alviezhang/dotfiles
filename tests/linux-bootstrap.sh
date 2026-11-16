@@ -55,7 +55,7 @@ check ".gitconfig has decrypted identity" "$(grep -c 'Linux Tester' "$HOME/.gitc
 for bin in zsh git tmux vim rg jq unzip; do
   check "package installed: $bin" "$(command -v "$bin" >/dev/null && echo yes || echo no)" "yes"
 done
-check "en_US.UTF-8 locale generated" "$(locale -a 2>/dev/null | grep -ciE '^en_US\.utf-?8$')" "1"
+check "zsh starts without locale warnings" "$(zsh -i -c 'exit 0' 2>&1 | grep -ci 'locale')" "0"
 check "oh-my-zsh installed" "$([ -s "$HOME/.oh-my-zsh/oh-my-zsh.sh" ] && echo yes || echo no)" "yes"
 if [ "$MT" = remote ]; then
   check "remote: plain ~/.tmux.conf" "$([ -f "$HOME/.tmux.conf" ] && [ ! -L "$HOME/.tmux.conf" ] && echo yes || echo no)" "yes"
