@@ -1,4 +1,4 @@
-.PHONY: install apply update clean
+.PHONY: install apply update clean test
 
 CHEZMOI := $(HOME)/.local/bin/chezmoi
 
@@ -8,7 +8,7 @@ install: $(CHEZMOI)
 
 $(CHEZMOI):
 	@echo "Installing chezmoi to $(HOME)/.local/bin/..."
-	sh -c "$$(curl -fsLS get.chezmoi.io)" -- -b "$(HOME)/.local/bin"
+	sh -c "$$(curl --proto '=https' --tlsv1.2 -fsLS https://get.chezmoi.io)" -- -b "$(HOME)/.local/bin"
 
 # 后续更新：重新应用所有 dotfiles
 apply:
@@ -23,3 +23,7 @@ update:
 clean:
 	rm -rf .tmux .worktrees
 	find . -name .DS_Store -delete || true
+
+# 隔离 HOME 中的本地测试：密钥链路、端到端 apply、模板渲染、口令轮换
+test:
+	@set -e; for t in tests/*.sh; do echo "== $$t"; "$$t"; done
