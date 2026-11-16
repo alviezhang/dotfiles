@@ -50,25 +50,6 @@ fi
 
 # --- Custom helpers (moved from ~/.oh-my-zsh/custom/*.zsh) ---
 
-# 代理配置
-proxy() {
-  export PROXYHOST="${PROXYHOST:-10.0.10.20}"
-  export http_proxy="http://${PROXYHOST}:${PROXYHTTPPORT:-7890}"
-  export https_proxy="http://${PROXYHOST}:${PROXYHTTPPORT:-7890}"
-  export all_proxy="socks5://${PROXYHOST}:${PROXYSOCKSPORT:-7891}"
-  echo "Proxy ON: http=$http_proxy socks=$all_proxy"
-}
-
-direct() {
-  unset http_proxy https_proxy all_proxy
-  echo "Proxy OFF"
-}
-
-if [[ -f "$XDG_CONFIG_HOME/proxy.sh" ]]; then
-  . "$XDG_CONFIG_HOME/proxy.sh"
-  proxy
-fi
-
 {{- if eq .chezmoi.os "linux" }}
 # Linux: 只在 open 未定义且 xdg-open 存在时创建 alias
 if ! type open &>/dev/null && command -v xdg-open &>/dev/null; then
