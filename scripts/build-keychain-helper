@@ -1,0 +1,119 @@
+#!/bin/bash
+# 从源码重建并签名 scripts/dotfiles-keychain.app。
+#
+# 需要：Xcode Command Line Tools（swiftc、codesign），钥匙串里的
+# "Developer ID Application" 签名身份，以及与 kc-config.swift 里 access group
+# 匹配的 provisioning profile（默认 scripts/dotfiles.provisionprofile，已 gitignore）。
+#
+# 用法：scripts/build-keychain-helper [--profile PATH] [--identity NAME] [--unsigned]
+#   --unsigned 只编译和组装 bundle，跳过签名（用于在没有证书的机器上检查能否构建）。
+#   产物先写到临时目录，验证通过后才替换现有的 .app。
+set -euo pipefail
+
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP="$SCRIPTS_DIR/dotfiles-keychain.app"
+PROFILE="$SCRIPTS_DIR/dotfiles.provisionprofile"
+IDENTITY=""
+SIGN=true
+MIN_MACOS="12.0"
+
+die() { echo "Error: $*" >&2; exit 1; }
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --profile)  shift; PROFILE="${1:-}"; [ -n "$PROFILE" ] || die "--profile requires a path" ;;
+    --identity) shift; IDENTITY="${1:-}"; [ -n "$IDENTITY" ] || die "--identity requires a name" ;;
+    --unsigned) SIGN=false ;;
+    -h|--help)  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) die "unknown argument: $1" ;;
+  esac
+  shift
+done
+
+[ "$(uname -s)" = "Darwin" ] || die "macOS only."
+for tool in swiftc codesign security plutil file; do
+  command -v "$tool" >/dev/null 2>&1 || die "$tool not found (install Xcode Command Line Tools)."
+done
+
+ACCESS_GROUP=$(sed -nE 's/^let keychainAccessGroup: String\? = "([^"]+)".*/\1/p' "$SCRIPTS_DIR/kc-config.swift")
+[ -n "$ACCESS_GROUP" ] || die "could not read keychainAccessGroup from kc-config.swift."
+TEAM_ID="${ACCESS_GROUP%%.*}"
+
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+
+if [ "$SIGN" = true ]; then
+  [ -f "$PROFILE" ] || die "provisioning profile not found: $PROFILE (pass --profile PATH)"
+  security cms -D -i "$PROFILE" > "$WORK/profile.plist" 2>/dev/null || die "cannot decode $PROFILE"
+  PROFILE_APP_ID=$(plutil -extract Entitlements.com\\.apple\\.application-identifier raw "$WORK/profile.plist")
+  PROFILE_TEAM=$(plutil -extract Entitlements.com\\.apple\\.developer\\.team-identifier raw "$WORK/profile.plist")
+  [ "$PROFILE_TEAM" = "$TEAM_ID" ] || die "profile team $PROFILE_TEAM does not match kc-config.swift team $TEAM_ID"
+  [ "$PROFILE_APP_ID" = "$ACCESS_GROUP" ] || die "profile app id $PROFILE_APP_ID does not match access group $ACCESS_GROUP"
+  EXPIRES=$(plutil -extract ExpirationDate raw "$WORK/profile.plist")
+  echo "Profile: app id $PROFILE_APP_ID, expires $EXPIRES"
+
+  if [ -z "$IDENTITY" ]; then
+    IDENTITY=$(security find-identity -v -p codesigning \
+      | sed -nE "s/.*\"(Developer ID Application: .*\($TEAM_ID\))\".*/\1/p" | head -n1)
+  fi
+  [ -n "$IDENTITY" ] || die "no 'Developer ID Application' identity for team $TEAM_ID in the keychain (pass --identity NAME)."
+  echo "Identity: $IDENTITY"
+fi
+
+BUNDLE="$WORK/dotfiles-keychain.app"
+mkdir -p "$BUNDLE/Contents/MacOS"
+
+# 只面向 Apple Silicon；所有使用这套 dotfiles 的 Mac 都是 arm64
+swiftc -O -parse-as-library \
+  -target "arm64-apple-macosx$MIN_MACOS" \
+  -o "$BUNDLE/Contents/MacOS/dotfiles-keychain" \
+  "$SCRIPTS_DIR/kc-config.swift" "$SCRIPTS_DIR/keychain-helper.swift"
+
+cat > "$BUNDLE/Contents/Info.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>$ACCESS_GROUP</string>
+  <key>CFBundleExecutable</key><string>dotfiles-keychain</string>
+  <key>CFBundleName</key><string>dotfiles-keychain</string>
+  <key>CFBundleVersion</key><string>1</string>
+</dict></plist>
+EOF
+plutil -lint "$BUNDLE/Contents/Info.plist" >/dev/null
+
+if [ "$SIGN" = true ]; then
+  cp "$PROFILE" "$BUNDLE/Contents/embedded.provisionprofile"
+  cat > "$WORK/entitlements.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>com.apple.application-identifier</key><string>$ACCESS_GROUP</string>
+  <key>com.apple.developer.team-identifier</key><string>$TEAM_ID</string>
+  <key>keychain-access-groups</key><array><string>$ACCESS_GROUP</string></array>
+</dict></plist>
+EOF
+  codesign --force --options runtime --timestamp \
+    --identifier "$ACCESS_GROUP" \
+    --entitlements "$WORK/entitlements.plist" \
+    --sign "$IDENTITY" "$BUNDLE"
+  codesign --verify --deep --strict "$BUNDLE"
+  # 实际调用一次：签名或 entitlements 不被接受时，SecItem 会返回非 44 的错误
+  rc=0; "$BUNDLE/Contents/MacOS/dotfiles-keychain" get dotfiles-build-probe-nonexistent "${USER:-probe}" >/dev/null 2>&1 || rc=$?
+  [ "$rc" -eq 44 ] || die "built helper failed a Keychain lookup (exit $rc); not installing it."
+else
+  echo "Unsigned build: skipping profile, entitlements and signing."
+fi
+
+file "$BUNDLE/Contents/MacOS/dotfiles-keychain"
+
+if [ "$SIGN" = false ]; then
+  echo "Built (unsigned, not installed): checks passed; existing $APP left unchanged."
+  exit 0
+fi
+
+# 去掉 Dropbox 等同步工具附加的扩展属性，否则 codesign --strict 会拒绝这个 bundle
+xattr -cr "$BUNDLE"
+rm -rf "$APP.new"
+mv "$BUNDLE" "$APP.new"
+rm -rf "$APP"
+mv "$APP.new" "$APP"
+echo "Installed $APP"

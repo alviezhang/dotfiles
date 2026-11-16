@@ -4,27 +4,29 @@ My [Chezmoi](https://www.chezmoi.io/)-managed dotfiles for macOS and Linux. The 
 
 ## Highlights
 
-- **One-command bootstrap** for a clean macOS or Linux account.
+- **One-command bootstrap** for a clean macOS or Linux account. The only prerequisite is `curl`; decryption uses chezmoi's built-in age, so no `age` or `expect` binary is needed.
 - **`personal` / `work` / `remote` profiles** with shared defaults and profile-specific tmux behavior.
-- **age-encrypted secrets**: only ciphertext (`key.txt.age`, `git-identity.toml.age`) lives in the repo, and the decrypted key is rebuilt on each apply/update.
-- **macOS Keychain support** for non-interactive updates, with **iCloud Keychain sync** between Macs using the same Apple ID. The bundled helper reads the passphrase from stdin (no argv leak); file and env-var fallbacks cover Linux and CI.
+- **age-encrypted secrets**: only ciphertext (`key.txt.age`, `git-identity.toml.age`) lives in the repo. Every apply checks the decrypted key against `age-recipient.txt` and rebuilds it only when it is missing or wrong.
+- **macOS Keychain support** with **iCloud Keychain sync** between Macs using the same Apple ID. The bundled helper reads the passphrase from stdin (no argv leak); file and env-var fallbacks cover Linux and CI.
 - **Opt-in language tools**: Go, Rust, Node.js, and pipx can be enabled per machine via TOML or env vars.
 
 ## Install
 
 ```bash
 # Personal
-bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+sh -c "$(curl --proto '=https' --tlsv1.2 -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=personal
 
 # Work
-bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+sh -c "$(curl --proto '=https' --tlsv1.2 -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=work
 
 # Remote server
-bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+sh -c "$(curl --proto '=https' --tlsv1.2 -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang --promptString machineType=remote
 ```
+
+On a fresh Mac, run this from an administrator account: the Homebrew installer asks for your password and installs the Command Line Tools.
 
 You can also configure machine type and language tools via environment variables:
 
@@ -34,17 +36,32 @@ CHEZMOI_INSTALL_GO=1 \
 CHEZMOI_INSTALL_RUST=1 \
 CHEZMOI_INSTALL_NODE=1 \
 CHEZMOI_INSTALL_PIPX=1 \
-bash -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+sh -c "$(curl --proto '=https' --tlsv1.2 -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" \
   init --apply alviezhang
 ```
 
 - `CHEZMOI_MACHINE_TYPE`: `personal` / `work` / `remote`
 - `CHEZMOI_INSTALL_GO`, `CHEZMOI_INSTALL_RUST`, `CHEZMOI_INSTALL_NODE`, `CHEZMOI_INSTALL_PIPX`:
-  - set to `1` / `true` / `yes` / `on` to enable
-  - set to `0` / `false` / `no` / `off` to disable
+  - `0` / `false` / `no` / `off` disables; any other non-empty value enables
   - unset to follow `~/.config/chezmoi/chezmoi.toml`
 
 For non-interactive runs, see [Secrets](#secrets) below for password setup.
+
+## What bootstrap does
+
+`chezmoi apply` runs in three stages:
+
+| Stage | What runs | On failure |
+|---|---|---|
+| Before files | Check `~/.config/chezmoi/key.txt`; decrypt `key.txt.age` only if the key is missing or does not match `age-recipient.txt` | Apply stops; nothing else is written |
+| Files | Dotfiles are written to `~` | — |
+| After files | Homebrew (macOS) or missing apt/pacman packages (Linux), oh-my-zsh, tmux theme, enabled language tools, pipx/cargo/npm packages, vim plugins, `brew bundle` (last) | Apply exits non-zero; dotfiles are already in place, and the failed step reruns on the next `chezmoi apply` |
+
+Later steps depend on earlier ones (for example oh-my-zsh needs `git`), so a failure stops the remaining steps of that run. Fix the cause, or just rerun `chezmoi apply` after a network error.
+
+vim plugins are installed only when `chezmoi apply` runs in a terminal; otherwise apply prints a reminder to run `:PlugInstall`.
+
+On Linux, only packages that are not yet installed are passed to apt/pacman, so a host that already has them does not need `sudo`.
 
 ## Enable Language Tools
 
@@ -111,8 +128,8 @@ Installed automatically by OS:
 | Flag | Tool | Install method |
 |------|------|---------------|
 | `installGo` | Go | brew / apt / pacman |
-| `installRust` | Rust | rustup (curl) |
-| `installNode` | Node.js | fnm (curl) |
+| `installRust` | Rust | rustup (official installer) |
+| `installNode` | Node.js | fnm (macOS: brew; Linux: official installer), then latest LTS |
 | `installPipx` | Python CLIs (pipx) | pipx (brew / apt / pacman) |
 
 Rust uses XDG paths by default:
@@ -140,8 +157,7 @@ chezmoi apply
 
 ## Secrets
 
-For non-interactive runs, the age passphrase that decrypts `key.txt.age`
-is looked up in this order:
+Every apply first checks that `~/.config/chezmoi/key.txt` is the private key for `age-recipient.txt`. If it is, no passphrase is read at all. Only when the key is missing or wrong is the age passphrase for `key.txt.age` looked up, in this order:
 
 1. `$CHEZMOI_AGE_PASSWORD` env var
    - **Use only for CI / ephemeral / one-shot scenarios.** Env vars are
@@ -149,20 +165,18 @@ is looked up in this order:
      `/proc/<pid>/environ` / macOS equivalents — not recommended as
      steady-state storage.
 2. **macOS Keychain** (Darwin only): service `dotfiles-passphrase`,
-   account `$USER`. `scripts/rotate-password` writes through the bundled
-   [`dotfiles-keychain`](#bundled-keychain-helper) helper; bootstrap reads
-   through the helper, or through `security` if the helper is unavailable.
+   account `$USER`, read and written through the bundled
+   [`dotfiles-keychain`](#bundled-keychain-helper) helper.
 3. **File** at `~/.config/dotfiles/passphrase` (mode `0600`).
    - Falls through with a warning if perms are not `0600`.
 4. Interactive prompt fallback.
 
 If a source returns an empty value or fails (e.g., locked Keychain),
 the script falls through with a warning. If a source returns a
-password but age decryption fails (i.e., wrong password), the script
+password but decryption fails (i.e., wrong password), the script
 exits with an error rather than continuing to the next source.
 
-If you accidentally edit `~/.config/chezmoi/key.txt`, `chezmoi apply`
-or `chezmoi update` re-decrypts it on every run and self-heals.
+The key is decrypted to a `0600` temp file and checked against `age-recipient.txt` before it replaces `key.txt`. A failed or mismatched decrypt never deletes or overwrites the existing key.
 
 ### Bootstrap & rotation
 
@@ -175,18 +189,18 @@ scripts/rotate-password --file        # force file storage at default path
 scripts/rotate-password --file /custom/path
 ```
 
-> On macOS, `scripts/rotate-password` writes via the bundled
-> `dotfiles-keychain` helper, which takes the password on **stdin** —
-> the new passphrase never appears in `ps` / argv. Use `--file` if
-> you'd rather store the password as a `0600` file on disk and skip
-> the Keychain entirely.
+Rotation re-encrypts `key.txt.age`, verifies it decrypts with the new passphrase, stores the passphrase, and only then replaces `key.txt.age`. **Commit and push `key.txt.age` afterwards**, otherwise other machines are left with a passphrase that does not match their copy.
+
+On macOS, `--file` also deletes the Keychain entry, because the Keychain takes precedence over the file. The deletion syncs to your other Macs.
 
 ### Bundled Keychain helper
 
 `scripts/dotfiles-keychain` is a small Developer ID–signed Swift CLI
 that the rotation script writes through, taking the passphrase on
 **stdin** (no `ps` / argv leak). Source: `scripts/keychain-helper.swift`;
-build configuration in `scripts/kc-config.swift`.
+build configuration in `scripts/kc-config.swift`; rebuild with
+`scripts/build-keychain-helper` (requires the Developer ID signing
+identity and the provisioning profile).
 
 The passphrase is stored as a synchronizable Keychain item, so it
 propagates between Macs sharing the same Apple ID with iCloud Keychain
@@ -206,30 +220,37 @@ scripts/edit-secret git-identity.toml.age
 
 ### Recovery (broken state)
 
-If `~/.config/chezmoi/key.txt` is missing AND Keychain is empty / wrong
-AND the password file is gone, `scripts/rotate-password` cannot help
-(it requires the existing decrypted key). Recover manually:
+If `~/.config/chezmoi/key.txt` is missing and the stored passphrase is
+wrong (or gone), remove the stale source so apply falls back to the
+interactive prompt, then type the passphrase in a terminal:
+
+```bash
+# macOS: remove a stale Keychain entry (syncs to your other Macs)
+"$(chezmoi source-path)/scripts/dotfiles-keychain" delete dotfiles-passphrase "$USER"
+# Linux / file storage: remove a stale passphrase file
+rm -f ~/.config/dotfiles/passphrase
+
+chezmoi apply   # prompts for the passphrase and restores key.txt
+```
+
+Then store the passphrase again so future recoveries are non-interactive:
 
 ```bash
 SOURCE_DIR="$(chezmoi source-path)"
-mkdir -p ~/.config/chezmoi
-age -d "$SOURCE_DIR/key.txt.age" > ~/.config/chezmoi/key.txt   # prompts for password
-chmod 600 ~/.config/chezmoi/key.txt
-
-printf "Age passphrase: "
-read -rs PW
-echo
-
-# Store in the default platform location:
+printf "Age passphrase: "; read -rs PW; echo
 if [ "$(uname -s)" = "Darwin" ]; then
-    printf '%s' "$PW" | "$SOURCE_DIR/scripts/dotfiles-keychain" \
-        set dotfiles-passphrase "$USER"
+    printf '%s' "$PW" | "$SOURCE_DIR/scripts/dotfiles-keychain" set dotfiles-passphrase "$USER"
 else
     mkdir -p ~/.config/dotfiles && chmod 700 ~/.config/dotfiles
-    umask 077 && printf '%s' "$PW" > ~/.config/dotfiles/passphrase
-    chmod 600 ~/.config/dotfiles/passphrase
+    (umask 077 && printf '%s' "$PW" > ~/.config/dotfiles/passphrase)
 fi
 unset PW
-
-chezmoi diff   # verify
 ```
+
+## Development
+
+```bash
+make test
+```
+
+Runs `tests/*.sh` in an isolated `HOME` with throwaway keys and passphrases: key decryption and failure safety, an end-to-end `chezmoi init --apply` with stubbed installers, template rendering for every OS × machine type × tool toggle, and passphrase rotation. They never read your real key, Keychain, or passphrase file.
