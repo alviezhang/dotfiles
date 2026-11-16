@@ -1,0 +1,45 @@
+#!/bin/bash
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+TMUX_CONF="$HOME/.tmux.conf"
+
+# 把已有的普通文件备份走，已有的软链接直接删除
+clear_target() {
+  if [ -L "$1" ]; then
+    rm -f "$1"
+  elif [ -e "$1" ]; then
+    mv "$1" "$1.bak.$(date +%s)"
+  fi
+}
+
+{{ if .remote -}}
+# remote：最小配置，不装主题
+clear_target "$TMUX_CONF"
+cat > "$TMUX_CONF" <<'EOF'
+set -g mouse on
+set -g history-limit 10000
+set -g status-keys vi
+set -g mode-keys vi
+EOF
+{{- else -}}
+command -v git >/dev/null 2>&1 || { echo "error: git is required to install the tmux theme" >&2; exit 1; }
+
+THEME_DIR="$XDG_DATA_HOME/tmux/gpakosz-tmux"
+LOCAL_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf.local"
+
+if [ -d "$THEME_DIR/.git" ]; then
+  git -C "$THEME_DIR" pull --ff-only || echo "warning: could not update $THEME_DIR; keeping current version" >&2
+else
+  [ -e "$THEME_DIR" ] && mv "$THEME_DIR" "$THEME_DIR.bak.$(date +%s)"
+  mkdir -p "$(dirname "$THEME_DIR")"
+  git clone --depth 1 https://github.com/gpakosz/.tmux.git "$THEME_DIR"
+fi
+[ -r "$THEME_DIR/.tmux.conf" ] || { echo "error: tmux theme config not found: $THEME_DIR/.tmux.conf" >&2; exit 1; }
+
+# gpakosz/.tmux 固定读取 ~/.tmux.conf 和 ~/.tmux.conf.local，用软链接指向 XDG 位置
+clear_target "$TMUX_CONF"
+ln -s "$THEME_DIR/.tmux.conf" "$TMUX_CONF"
+clear_target "$HOME/.tmux.conf.local"
+ln -s "$LOCAL_CONF" "$HOME/.tmux.conf.local"
+{{- end }}

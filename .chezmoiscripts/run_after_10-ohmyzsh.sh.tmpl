@@ -1,0 +1,19 @@
+#!/bin/bash
+# 每次 apply 都检查；已安装时立即退出，缺失或残缺时重装
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+ZSH_DIR="$HOME/.oh-my-zsh"
+[ -s "$ZSH_DIR/oh-my-zsh.sh" ] && exit 0
+
+command -v zsh >/dev/null 2>&1 || { echo "zsh not installed; skip oh-my-zsh"; exit 0; }
+command -v git >/dev/null 2>&1 || { echo "error: git is required to install oh-my-zsh" >&2; exit 1; }
+
+if [ -e "$ZSH_DIR" ]; then
+  mv "$ZSH_DIR" "$ZSH_DIR.bak.$(date +%s)"
+fi
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+fetch https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh "$tmp/install.sh"
+RUNZSH=no CHSH=no KEEP_ZSHRC=yes ZSH="$ZSH_DIR" sh "$tmp/install.sh"

@@ -1,0 +1,10 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Brewfile hash: {{ include "platform/darwin/Brewfile" | sha256sum }}
+# 放在最后：bootstrap 的其余步骤都不依赖 Brewfile。失败会让 apply 报错，下次自动重试。
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+command -v brew >/dev/null 2>&1 || { echo "error: brew not found (00-homebrew should have installed it)" >&2; exit 1; }
+brew bundle --no-upgrade --file="{{ .chezmoi.sourceDir }}/platform/darwin/Brewfile"
+{{ end -}}

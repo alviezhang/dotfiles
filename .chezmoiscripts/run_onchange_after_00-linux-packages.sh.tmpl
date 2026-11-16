@@ -1,0 +1,35 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+# apt.list hash: {{ include "platform/linux/apt.list" | sha256sum }}
+# pacman.list hash: {{ include "platform/linux/pacman.list" | sha256sum }}
+# 只安装缺失的包；全部已装时不需要 root，包已齐全的服务器上无 sudo 也能通过
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+LIST_DIR="{{ .chezmoi.sourceDir }}/platform/linux"
+
+if command -v apt-get >/dev/null 2>&1; then
+  items=$(list_items "$LIST_DIR/apt.list")
+  mapfile -t packages <<< "$items"
+  missing=()
+  for p in "${packages[@]}"; do
+    [ -n "$p" ] || continue
+    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'ok installed' || missing+=("$p")
+  done
+  [ "${#missing[@]}" -eq 0 ] && { echo "apt: all packages installed"; exit 0; }
+  echo "apt: installing ${missing[*]}"
+  run_as_root env DEBIAN_FRONTEND=noninteractive apt-get update -q
+  run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
+elif command -v pacman >/dev/null 2>&1; then
+  items=$(list_items "$LIST_DIR/pacman.list")
+  mapfile -t packages <<< "$items"
+  missing=()
+  [ -n "$items" ] && mapfile -t missing < <(pacman -T "${packages[@]}" || true)
+  [ "${#missing[@]}" -eq 0 ] && { echo "pacman: all packages installed"; exit 0; }
+  echo "pacman: installing ${missing[*]}"
+  run_as_root pacman -S --needed --noconfirm "${missing[@]}"
+else
+  echo "error: no supported package manager (apt-get/pacman); install platform/linux/*.list manually" >&2
+  exit 1
+fi
+{{ end -}}

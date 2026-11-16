@@ -8,6 +8,7 @@ CLAUDE.md
 platform
 packages
 scripts
+tests
 
 # age 加密文件（不放入 ~/）
 key.txt.age
@@ -15,10 +16,7 @@ git-identity.toml.age
 age-recipient.txt
 
 # 以下条目按目标路径匹配（相对 ~），不是源路径（dot_config/...）
-
-# OS 专属安装脚本
-{{ if ne .chezmoi.os "darwin" }}.chezmoiscripts/darwin/**{{ end }}
-{{ if ne .chezmoi.os "linux" }}.chezmoiscripts/linux/**{{ end }}
+# OS 专属安装脚本不在这里过滤：脚本自身按 OS 整体渲染，不匹配时渲染为空、被 chezmoi 跳过
 
 # fontconfig 仅 Linux 使用
 {{ if ne .chezmoi.os "linux" }}.config/fontconfig{{ end }}

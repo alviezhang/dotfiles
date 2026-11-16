@@ -1,0 +1,17 @@
+{{ if .installRust -}}
+#!/bin/bash
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+use_rustup_home && exit 0
+
+export RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER:-https://mirrors.ustc.edu.cn/rust-static}"
+export RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT:-https://mirrors.ustc.edu.cn/rust-static/rustup}"
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+fetch https://sh.rustup.rs "$tmp/rustup-init.sh"
+sh "$tmp/rustup-init.sh" -y --no-modify-path
+
+use_rustup_home || { echo "error: rustup finished but no active toolchain was found" >&2; exit 1; }
+{{ end -}}

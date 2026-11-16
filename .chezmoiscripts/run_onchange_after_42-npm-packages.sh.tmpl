@@ -1,0 +1,19 @@
+#!/bin/bash
+# npm.list hash: {{ include "packages/npm.list" | sha256sum }}
+# installNode: {{ .installNode }}（开关变化时重跑，否则先跳过的这一步不会再执行）
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+if ! command -v npm >/dev/null 2>&1 && command -v fnm >/dev/null 2>&1; then
+  eval "$(fnm env)"
+fi
+command -v npm >/dev/null 2>&1 || { echo "npm not found; skip npm packages"; exit 0; }
+
+export npm_config_audit=false
+export npm_config_fund=false
+
+items=$(list_items "{{ .chezmoi.sourceDir }}/packages/npm.list")
+[ -n "$items" ] || { echo "npm.list is empty; skip"; exit 0; }
+while IFS= read -r pkg; do
+  npm install -g "$pkg"
+done <<< "$items"

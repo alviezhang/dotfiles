@@ -31,6 +31,8 @@
 {{-   $installPipx = not (or (eq $installPipxEnv "0") (eq $installPipxEnv "false") (eq $installPipxEnv "no") (eq $installPipxEnv "off")) -}}
 {{- end -}}
 encryption = "age"
+# 固定用 chezmoi 内置 age：bootstrap 不依赖系统里是否装了 age
+useBuiltinAge = true
 [age]
   identity = "~/.config/chezmoi/key.txt"
   recipient = {{ include "age-recipient.txt" | trim | quote }}

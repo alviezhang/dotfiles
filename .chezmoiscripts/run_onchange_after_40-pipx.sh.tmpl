@@ -1,0 +1,33 @@
+{{ if .installPipx -}}
+#!/bin/bash
+# pipx.list hash: {{ include "packages/pipx.list" | sha256sum }}
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+export PIPX_HOME="${PIPX_HOME:-$XDG_DATA_HOME/pipx}"
+export PIPX_BIN_DIR="${PIPX_BIN_DIR:-$HOME/.local/bin}"
+export PIPX_MAN_DIR="${PIPX_MAN_DIR:-$XDG_DATA_HOME/man}"
+mkdir -p "$PIPX_BIN_DIR"
+
+if ! command -v pipx >/dev/null 2>&1; then
+{{- if eq .chezmoi.os "darwin" }}
+  brew install pipx
+{{- else }}
+  if command -v apt-get >/dev/null 2>&1; then
+    run_as_root env DEBIAN_FRONTEND=noninteractive apt-get update -q
+    run_as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y pipx
+  elif command -v pacman >/dev/null 2>&1; then
+    run_as_root pacman -S --needed --noconfirm python-pipx
+  else
+    echo "error: no supported package manager (apt-get/pacman); install pipx manually" >&2
+    exit 1
+  fi
+{{- end }}
+fi
+
+items=$(list_items "{{ .chezmoi.sourceDir }}/packages/pipx.list")
+[ -n "$items" ] || { echo "pipx.list is empty; skip"; exit 0; }
+while IFS= read -r pkg; do
+  pipx install "$pkg"
+done <<< "$items"
+{{ end -}}

@@ -1,0 +1,13 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# 安装 Homebrew 本体；它会顺带装好 Command Line Tools，后续脚本依赖其中的 git
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+command -v brew >/dev/null 2>&1 && exit 0
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+fetch https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh "$tmp/install.sh"
+/bin/bash "$tmp/install.sh"
+{{ end -}}

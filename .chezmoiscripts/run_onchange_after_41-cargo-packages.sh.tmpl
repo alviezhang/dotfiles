@@ -1,0 +1,17 @@
+#!/bin/bash
+# cargo.list hash: {{ include "packages/cargo.list" | sha256sum }}
+# installRust: {{ .installRust }}（开关变化时重跑，否则先跳过的这一步不会再执行）
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+use_rustup_home || { echo "no rustup-managed toolchain; skip cargo packages"; exit 0; }
+CARGO="$CARGO_HOME/bin/cargo"
+
+items=$(list_items "{{ .chezmoi.sourceDir }}/packages/cargo.list")
+[ -n "$items" ] || { echo "cargo.list is empty; skip"; exit 0; }
+while IFS= read -r crate; do
+  if ! "$CARGO" install --locked "$crate"; then
+    echo "cargo install --locked failed for '$crate'; retrying without --locked" >&2
+    "$CARGO" install "$crate"
+  fi
+done <<< "$items"

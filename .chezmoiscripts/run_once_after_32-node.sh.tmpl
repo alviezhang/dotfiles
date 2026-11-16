@@ -1,0 +1,22 @@
+{{ if .installNode -}}
+#!/bin/bash
+set -euo pipefail
+{{ template "lib.sh" . }}
+
+if ! command -v fnm >/dev/null 2>&1; then
+{{- if eq .chezmoi.os "darwin" }}
+  brew install fnm
+{{- else }}
+  tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+  fetch https://fnm.vercel.app/install "$tmp/install.sh"
+  bash "$tmp/install.sh" --install-dir "$FNM_DIR" --skip-shell
+  path_prepend "$FNM_DIR"
+{{- end }}
+fi
+command -v fnm >/dev/null 2>&1 || { echo "error: fnm installer finished but fnm is not on PATH" >&2; exit 1; }
+
+eval "$(fnm env)"
+fnm install --lts
+fnm default lts-latest
+{{ end -}}

@@ -1,138 +1,122 @@
 #!/bin/bash
-# Re-decrypt on every apply/update so accidental local key edits are self-healed.
+# 保证 ~/.config/chezmoi/key.txt 是 age-recipient.txt 对应的私钥。
+# 已匹配时直接退出，不读取任何口令源；缺失或不匹配时才用口令解密 key.txt.age。
+# 只依赖 chezmoi 内置的 age，不需要 age / expect 二进制。
 set -euo pipefail
+umask 077
 
-KEY_FILE="${HOME}/.config/chezmoi/key.txt"
+CHEZMOI="${CHEZMOI_EXECUTABLE:-chezmoi}"
 SOURCE_DIR="{{ .chezmoi.sourceDir }}"
+RECIPIENT="{{ include "age-recipient.txt" | trim }}"
+KEY_DIR="$HOME/.config/chezmoi"
+KEY_FILE="$KEY_DIR/key.txt"
+KEY_AGE="$SOURCE_DIR/key.txt.age"
 PW_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/passphrase"
+KEYCHAIN_BIN="$SOURCE_DIR/scripts/dotfiles-keychain"
+KEYCHAIN_SERVICE="dotfiles-passphrase"
+ACCOUNT="${USER:-$(id -un)}"
 
-mkdir -p "${HOME}/.config/chezmoi"
-command -v age >/dev/null 2>&1 || { echo "age not found in PATH" >&2; exit 1; }
+warn() { echo "warning: $*" >&2; }
 
-# 密码来源（按优先级）：
-#   1. CHEZMOI_AGE_PASSWORD env var (CI / ephemeral；same-user 进程可见，不作稳态)
-#   2. macOS Keychain (sync enabled via dotfiles-keychain helper; falls back to security CLI)
-#   3. ~/.config/dotfiles/passphrase (mode 0600)
-#   4. 交互式输入（chezmoi age decrypt 自身 prompt）
-#
-# Fall-through 规则：
-#   - 源未找到：安静下一层
-#   - 源找到但为空：warning + 下一层
-#   - 源访问失败（keychain 锁/拒、文件 perm 错）：warning + 下一层
-#   - 拿到密码但 age 解密失败：不 fallthrough，set -e 直接报错退出
+key_matches() {
+    [ -s "$1" ] && [ "$("$CHEZMOI" age-keygen -y "$1" 2>/dev/null)" = "$RECIPIENT" ]
+}
 
+file_mode() {
+    if [ "$(uname -s)" = "Darwin" ]; then stat -f '%Lp' "$1"; else stat -c '%a' "$1"; fi
+}
+
+key_matches "$KEY_FILE" && exit 0
+
+# 口令来源（按优先级）：
+#   1. CHEZMOI_AGE_PASSWORD（CI / 一次性场景；同用户进程可见，不作稳态存储）
+#   2. macOS Keychain，经 scripts/dotfiles-keychain 读取（iCloud 钥匙串同步）
+#   3. ~/.config/dotfiles/passphrase（必须 0600）
+#   4. 交互输入
+# 来源缺失时安静跳过；来源存在但为空或读取失败时警告并跳过；
+# 拿到口令但解密失败时直接报错，不再尝试下一个来源。
 PASSWORD=""
-PW_SOURCE=""        # human-readable source label, used in error messages
-KEYCHAIN_BIN="${SOURCE_DIR}/scripts/dotfiles-keychain"
+PW_SOURCE=""
 
-# 1. Env var
-if [ "${CHEZMOI_AGE_PASSWORD+set}" = "set" ]; then
-    if [ -n "$CHEZMOI_AGE_PASSWORD" ]; then
-        PASSWORD="$CHEZMOI_AGE_PASSWORD"
-        PW_SOURCE="env CHEZMOI_AGE_PASSWORD"
-    else
-        echo "warning: CHEZMOI_AGE_PASSWORD is set but empty; falling through" >&2
-    fi
+if [ -n "${CHEZMOI_AGE_PASSWORD:-}" ]; then
+    PASSWORD="$CHEZMOI_AGE_PASSWORD"
+    PW_SOURCE="env CHEZMOI_AGE_PASSWORD"
+elif [ "${CHEZMOI_AGE_PASSWORD+set}" = "set" ]; then
+    warn "CHEZMOI_AGE_PASSWORD is set but empty; falling through"
 fi
 
-# 2. macOS Keychain (sync enabled via pre-built Developer ID .app bundle in repo)
 if [ -z "$PASSWORD" ] && [ "$(uname -s)" = "Darwin" ]; then
-    KC_RC=0 KC_PW=""
-    if [ -x "$KEYCHAIN_BIN" ]; then
-        KC_PW=$("$KEYCHAIN_BIN" get dotfiles-passphrase "$USER" 2>/dev/null) || KC_RC=$?
-    elif command -v security &>/dev/null; then
-        KC_PW=$(security find-generic-password -s dotfiles-passphrase -a "$USER" -w 2>/dev/null) || KC_RC=$?
-    else
-        KC_RC=44
-    fi
-    if [ "$KC_RC" -eq 0 ] && [ -n "$KC_PW" ]; then
-        PASSWORD="$KC_PW"
-        PW_SOURCE="macOS Keychain (service=dotfiles-passphrase, account=$USER)"
-    elif [ "$KC_RC" -eq 0 ] && [ -z "$KC_PW" ]; then
-        echo "warning: Keychain entry 'dotfiles-passphrase' is empty; falling through" >&2
-    elif [ "$KC_RC" -ne 44 ]; then
-        echo "warning: Keychain lookup exited with $KC_RC; falling through" >&2
-    fi
+    kc_rc=0
+    kc_pw=$("$KEYCHAIN_BIN" get "$KEYCHAIN_SERVICE" "$ACCOUNT" 2>/dev/null) || kc_rc=$?
+    case "$kc_rc" in
+        0)  if [ -n "$kc_pw" ]; then
+                PASSWORD="$kc_pw"
+                PW_SOURCE="macOS Keychain (service=$KEYCHAIN_SERVICE, account=$ACCOUNT)"
+            else
+                warn "Keychain entry '$KEYCHAIN_SERVICE' is empty; falling through"
+            fi ;;
+        44) ;;
+        *)  warn "Keychain lookup via $KEYCHAIN_BIN exited with $kc_rc; falling through" ;;
+    esac
+    unset kc_pw
 fi
 
-# 3. File fallback (~/.config/dotfiles/passphrase, must be 0600)
 if [ -z "$PASSWORD" ] && [ -f "$PW_FILE" ]; then
-    perms=$(stat -f "%A" "$PW_FILE" 2>/dev/null || stat -c "%a" "$PW_FILE" 2>/dev/null || echo "?")
-    if [ "$perms" = "600" ]; then
-        FILE_PW=$(sed 's/[[:space:]]*$//' "$PW_FILE" 2>/dev/null) || FILE_PW=""
-        if [ -n "$FILE_PW" ]; then
-            PASSWORD="$FILE_PW"
+    mode=$(file_mode "$PW_FILE" 2>/dev/null || echo "?")
+    if [ "$mode" != "600" ]; then
+        warn "$PW_FILE has mode $mode, expected 600; refusing to read"
+    else
+        file_pw=""
+        IFS= read -r file_pw < "$PW_FILE" || true
+        file_pw="${file_pw%"${file_pw##*[![:space:]]}"}"
+        if [ -n "$file_pw" ]; then
+            PASSWORD="$file_pw"
             PW_SOURCE="file $PW_FILE"
         else
-            echo "warning: ${PW_FILE} is empty or unreadable; falling through" >&2
+            warn "$PW_FILE is empty or unreadable; falling through"
         fi
-    else
-        echo "warning: ${PW_FILE} has perms ${perms}, expected 600; refusing to read" >&2
+        unset file_pw
     fi
 fi
 
-# Verbose: log which source supplied the passphrase
-# Triggers: `chezmoi apply -v` / `--verbose`, or `DOTFILES_DECRYPT_VERBOSE=1`
-case " ${CHEZMOI_ARGS:-} ${CHEZMOI_VERBOSE:-} ${DOTFILES_DECRYPT_VERBOSE:-} " in
-    *" -v"*|*" --verbose"*|*" 1 "*|*" true "*)
-        [ -n "$PW_SOURCE" ] && echo "decrypt: passphrase from $PW_SOURCE" >&2 ;;
-esac
+mkdir -p "$KEY_DIR"
+TMP_KEY=$(mktemp "$KEY_DIR/key.txt.XXXXXX")
+trap 'rm -f "$TMP_KEY"' EXIT
 
-# 4. Decrypt
-if [ -n "$PASSWORD" ] && command -v expect &>/dev/null; then
-    # 非交互：通过 env var 把密码喂给 age（避免命令行参数泄漏）
-    set +e
-    AGE_PW="$PASSWORD" AGE_KEY="$KEY_FILE" AGE_SRC="$SOURCE_DIR/key.txt.age" \
-    expect -c '
-        log_user 0
-        spawn age -d -o $env(AGE_KEY) $env(AGE_SRC)
-        expect "Enter passphrase:"
-        send "$env(AGE_PW)\r"
-        expect eof
-        catch wait result
-        exit [lindex $result 3]
-    '
-    age_rc=$?
-    set -e
-    if [ "$age_rc" -ne 0 ]; then
-        rm -f "$KEY_FILE"   # remove possibly partial / corrupt output
+if [ -n "$PASSWORD" ]; then
+    echo "decrypt: $KEY_FILE missing or mismatched; decrypting key.txt.age with passphrase from $PW_SOURCE" >&2
+    rc=0
+    err=$(printf '%s\n' "$PASSWORD" \
+        | "$CHEZMOI" --no-tty age decrypt --passphrase --output "$TMP_KEY" "$KEY_AGE" 2>&1 >/dev/null) || rc=$?
+    if [ "$rc" -ne 0 ]; then
         cat >&2 <<EOF
-Error: age failed to decrypt key.txt.age (exit $age_rc).
-  Source file:     $SOURCE_DIR/key.txt.age
-  Password from:   $PW_SOURCE
+Error: failed to decrypt $KEY_AGE (exit $rc).
+  Passphrase from: $PW_SOURCE
+  chezmoi said:    ${err#Enter passphrase: }
 
-Most likely cause: the stored passphrase doesn't match key.txt.age.
-
-Common scenarios:
-  1. You rotated the passphrase on another machine but didn't commit/push
-     key.txt.age — this machine still has the old encrypted file but the
-     new passphrase (or vice versa).
-       Fix on the rotating machine:
-         chezmoi cd && git add key.txt.age && git commit -m "rotate passphrase" && git push
-       Then on this machine:
-         chezmoi update
-
-  2. The keychain / passphrase file holds a stale value from before rotation.
-       Fix:
-         scripts/rotate-password   # if you have the current decrypted key.txt
-       Or update the source manually (Keychain entry, or $PW_FILE).
+Most likely the stored passphrase does not match key.txt.age:
+  - The passphrase was rotated elsewhere but key.txt.age was not pushed/pulled
+    (on the rotating machine: commit and push key.txt.age; here: chezmoi update).
+  - The passphrase source holds a stale value; update the Keychain entry or
+    $PW_FILE, or unset it and run chezmoi apply in a terminal to type it.
 EOF
         exit 1
     fi
 else
-    # 交互式
-    if ! chezmoi age decrypt --output "$KEY_FILE" --passphrase "$SOURCE_DIR/key.txt.age"; then
-        rm -f "$KEY_FILE"
-        echo "Error: interactive age decryption failed (no password source available, or wrong passphrase entered)." >&2
-        echo "  See README 'Secrets' for how to set CHEZMOI_AGE_PASSWORD / Keychain / $PW_FILE." >&2
+    echo "decrypt: $KEY_FILE missing or mismatched and no passphrase source configured; prompting" >&2
+    if ! "$CHEZMOI" age decrypt --passphrase --output "$TMP_KEY" "$KEY_AGE"; then
+        echo "Error: interactive decryption of $KEY_AGE failed (wrong passphrase, or no terminal)." >&2
+        echo "  See README 'Secrets' for CHEZMOI_AGE_PASSWORD / Keychain / $PW_FILE." >&2
         exit 1
     fi
 fi
 
-if [ ! -s "$KEY_FILE" ]; then
-    echo "Error: $KEY_FILE is empty or missing after decryption — age reported success but produced no output." >&2
-    echo "  This shouldn't normally happen; check disk space and permissions on $(dirname "$KEY_FILE")." >&2
+if ! key_matches "$TMP_KEY"; then
+    echo "Error: key.txt.age decrypted, but the key does not match age-recipient.txt." >&2
+    echo "  key.txt.age and age-recipient.txt in $SOURCE_DIR are out of sync; $KEY_FILE left unchanged." >&2
     exit 1
 fi
 
-chmod 600 "$KEY_FILE"
+chmod 600 "$TMP_KEY"
+mv -f "$TMP_KEY" "$KEY_FILE"
+trap - EXIT
