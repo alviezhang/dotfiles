@@ -321,9 +321,8 @@ tmux_conf_theme_clock_style="24"
 #   - false (default)
 # on macOS, this requires installing reattach-to-user-namespace, see README.md
 # on Linux, this requires xsel or xclip
+# 主题按系统自动选择剪贴板命令：macOS pbcopy，Wayland wl-copy，X11 xsel/xclip，WSL clip.exe
 tmux_conf_copy_to_os_clipboard=true
-
-set -s copy-command 'wl-copy'
 
 # -- user customizations -------------------------------------------------------
 # this is the place to override or undo settings

@@ -12,6 +12,8 @@ jq
 wget
 curl
 unzip
+# tmux 主题复制到系统剪贴板（Wayland）
+wl-clipboard
 zoxide
 
 # Networking utilities

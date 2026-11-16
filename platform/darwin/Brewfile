@@ -6,7 +6,6 @@ brew "ripgrep"
 brew "htop"
 brew "tmux"
 brew "mtr"
-brew "python"
 brew "gh"
 brew "zoxide"
 
