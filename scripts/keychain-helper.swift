@@ -74,23 +74,36 @@ struct KeychainHelper {
             fputs("error: password is not valid UTF-8\n", stderr)
             exit(1)
         }
-        // Delete any existing item (any sync state) to migrate items from security CLI
-        let deleteQuery: [String: Any] = [
+        let synced = keychainAccessGroup != nil
+        let syncFlag: Any = synced ? kCFBooleanTrue as Any : kCFBooleanFalse as Any
+        let target = makeQuery(service: service, account: account, synchronizable: syncFlag)
+
+        // Update in place, add only when missing: a failed write never removes the
+        // existing passphrase (a deletion would also propagate via iCloud Keychain).
+        var status = SecItemUpdate(target as CFDictionary,
+                                   [kSecValueData as String: data] as CFDictionary)
+        if status == errSecItemNotFound {
+            var addQuery = target
+            addQuery[kSecValueData as String] = data
+            status = SecItemAdd(addQuery as CFDictionary, nil)
+        }
+        guard status == errSecSuccess else {
+            fputs("error: writing Keychain item failed with status \(status); existing item left unchanged\n", stderr)
+            exit(1)
+        }
+
+        // Migration: remove a same-named item with the opposite sync state (e.g. one
+        // created by `security add-generic-password`). Runs only after the new value
+        // is stored; failure here does not affect it.
+        let legacyQuery: [String: Any] = [
             kSecClass as String:              kSecClassGenericPassword,
             kSecAttrService as String:        service,
             kSecAttrAccount as String:        account,
-            kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
+            kSecAttrSynchronizable as String: synced ? kCFBooleanFalse as Any : kCFBooleanTrue as Any,
         ]
-        SecItemDelete(deleteQuery as CFDictionary)
-
-        let syncFlag: Any = keychainAccessGroup != nil ? kCFBooleanTrue as Any : kCFBooleanFalse as Any
-        var addQuery = makeQuery(service: service, account: account, synchronizable: syncFlag)
-        addQuery[kSecValueData as String] = data
-
-        let status = SecItemAdd(addQuery as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            fputs("error: SecItemAdd status \(status)\n", stderr)
-            exit(1)
+        let legacy = SecItemDelete(legacyQuery as CFDictionary)
+        if legacy != errSecSuccess && legacy != errSecItemNotFound {
+            fputs("warning: could not remove legacy Keychain item (status \(legacy)); new value is stored\n", stderr)
         }
     }
 
