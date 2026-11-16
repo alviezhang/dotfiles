@@ -20,9 +20,8 @@ openssh
 git
 github-cli
 
-# Secrets (expect feeds the age passphrase non-interactively)
+# Secrets: chezmoi has age built in; the age CLI is kept for manual troubleshooting
 age
-expect
 
 # Build tools (needed for Rust, Python extensions, etc.)
 base-devel

@@ -3,3 +3,5 @@
 .worktrees/
 .password
 scripts/dotfiles.provisionprofile
+# rotate-password 的临时目录（进程被强杀时可能残留）
+.rotate.*/
