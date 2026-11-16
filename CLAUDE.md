@@ -27,7 +27,7 @@ On first `chezmoi init`, you'll be prompted for:
 
 ## Directory Structure
 
-- **`dot_*` / `symlink_dot_*`** — Chezmoi-managed dotfiles (placed into `~/`)
+- **`dot_*`** — Chezmoi-managed dotfiles (placed into `~/`)
 - **`dot_config/`** — XDG config files (fontconfig for Linux)
 - **`packages/`** — Global package lists (pipx / npm / cargo)
 - **`platform/`** — OS-specific system package lists (not placed into `~/`)
@@ -35,14 +35,14 @@ On first `chezmoi init`, you'll be prompted for:
   - `linux/apt.list` / `pacman.list` — Linux package lists
 - **`scripts/`** — Maintenance helpers for encrypted files and passphrase rotation
 - **`.chezmoiscripts/`** — Install scripts (run by chezmoi)
-  - Root level: cross-platform (ohmyzsh, vim plugins, pipx packages, rust, fnm, tmux theme, global packages)
-  - `darwin/`: Homebrew install + brew bundle
-  - `linux/`: apt/pacman package install
+  - Root level: cross-platform (ohmyzsh, vim plugins, go, rust, fnm, pipx, tmux theme, global packages)
+  - `darwin/`: Homebrew install + brew bundle (ignored on other OSes via `.chezmoiignore.tmpl`)
+  - `linux/`: apt/pacman package install (ignored on other OSes via `.chezmoiignore.tmpl`)
 
 ## Key Files
 
 - `.chezmoi.toml.tmpl` — Machine type, tool switches, age identity/recipient
-- `.chezmoiignore.tmpl` — Files excluded from `~/`
+- `.chezmoiignore.tmpl` — Files excluded from `~/` and OS-specific script filtering; patterns match **target** paths (`.config/...`), not source paths (`dot_config/...`)
 - `.chezmoiscripts/run_before_00-decrypt-private-key.sh.tmpl` — Passphrase lookup and age key regeneration
 - `scripts/rotate-password` — Rotate the `key.txt.age` passphrase and store it in Keychain or a `0600` file
 - `scripts/edit-secret` — Edit age-encrypted files without committing plaintext

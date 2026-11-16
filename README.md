@@ -96,7 +96,9 @@ Machine type and OS are independent dimensions. System packages auto-detect by O
 - **remote**: write a minimal `~/.tmux.conf` (no theme).
 - Chezmoi manages `~/.config/tmux/tmux.conf.local` and creates `~/.tmux.conf.local` symlink for the theme (skipped on `remote`).
 
-**System packages** (auto by OS):
+## System Packages
+
+Installed automatically by OS:
 
 | OS | Package manager | Config |
 |---|---|---|
@@ -111,7 +113,7 @@ Machine type and OS are independent dimensions. System packages auto-detect by O
 | `installGo` | Go | brew / apt / pacman |
 | `installRust` | Rust | rustup (curl) |
 | `installNode` | Node.js | fnm (curl) |
-| `installPipx` | Python CLIs (pipx) | pipx (installed via Python) |
+| `installPipx` | Python CLIs (pipx) | pipx (brew / apt / pacman) |
 
 Rust uses XDG paths by default:
 - `CARGO_HOME=$XDG_DATA_HOME/cargo`
@@ -128,7 +130,7 @@ This repo manages "global" packages for each toolchain via list files under `pac
 - `packages/npm.list`
 - `packages/cargo.list`
 
-`pipx` is installed via Python (Linux: system `python3`, macOS: Homebrew `python3`).
+`pipx` itself comes from the system package manager (macOS: `brew install pipx`; Linux: apt `pipx` / pacman `python-pipx`).
 
 After editing, run:
 

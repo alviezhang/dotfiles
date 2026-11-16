@@ -2,6 +2,7 @@
 htop
 tmux
 zsh
+vim
 
 # File and text utilities
 tree
@@ -9,6 +10,7 @@ ripgrep
 jq
 wget
 curl
+zoxide
 
 # Networking utilities
 mtr
@@ -18,7 +20,9 @@ openssh-client
 git
 gh
 
-# Build tools (needed for Rust, Python extensions, etc.)
+# Secrets (expect feeds the age passphrase non-interactively)
 age
-zoxide
+expect
+
+# Build tools (needed for Rust, Python extensions, etc.)
 build-essential

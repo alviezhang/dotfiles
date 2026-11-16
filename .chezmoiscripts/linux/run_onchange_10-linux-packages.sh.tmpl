@@ -1,7 +1,6 @@
 #!/bin/bash
 # linux packages hash (apt): {{ include "platform/linux/apt.list" | sha256sum }}
 # linux packages hash (pacman): {{ include "platform/linux/pacman.list" | sha256sum }}
-{{ if ne .chezmoi.os "linux" }}exit 0{{ end }}
 set -euo pipefail
 
 SOURCE_DIR="{{ .chezmoi.sourceDir }}"
