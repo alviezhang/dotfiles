@@ -1,4 +1,4 @@
-.PHONY: install apply update clean test
+.PHONY: install apply update clean test test-linux
 
 CHEZMOI := $(HOME)/.local/bin/chezmoi
 
@@ -26,4 +26,11 @@ clean:
 
 # 隔离 HOME 中的本地测试：密钥链路、端到端 apply、模板渲染、口令轮换
 test:
-	@set -e; for t in tests/*.sh; do echo "== $$t"; "$$t"; done
+	@set -e; for t in tests/*.sh; do \
+	  case "$$t" in tests/linux-bootstrap.sh) continue ;; esac; \
+	  echo "== $$t"; "$$t"; \
+	done
+
+# 在 debian/ubuntu/arch 容器里从零 bootstrap（需要 docker 和网络）
+test-linux:
+	tests/linux-bootstrap.sh

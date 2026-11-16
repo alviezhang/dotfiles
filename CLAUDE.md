@@ -72,4 +72,4 @@ On first `chezmoi init`, you'll be prompted for the **machine type** (personal /
 
 - Tests must `unset XDG_CONFIG_HOME` (and the other XDG vars) besides overriding `HOME`: chezmoi prefers `XDG_CONFIG_HOME`, so a test that only changes `HOME` writes to the user's real `~/.config/chezmoi/chezmoi.toml`.
 - Use throwaway keys and passphrases and a stub `scripts/dotfiles-keychain`; never touch the real Keychain or `key.txt`.
-- Linux bootstrap and macOS first-run cannot be covered locally; verify them in a container/VM or a fresh user account.
+- `make test` runs the isolated local tests; `make test-linux` (`tests/linux-bootstrap.sh`) needs Docker. macOS first-run can only be verified in a fresh user account or VM.

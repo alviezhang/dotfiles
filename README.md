@@ -254,3 +254,9 @@ make test
 ```
 
 Runs `tests/*.sh` in an isolated `HOME` with throwaway keys and passphrases: key decryption and failure safety, an end-to-end `chezmoi init --apply` with stubbed installers, template rendering for every OS × machine type × tool toggle, and passphrase rotation. They never read your real key, Keychain, or passphrase file.
+
+```bash
+make test-linux
+```
+
+Bootstraps from scratch in `debian:stable`, `ubuntu:latest`, and `archlinux:latest` containers as a non-root user, for both `remote` and `personal`, with the real installers and throwaway keys. Needs Docker and network access.
